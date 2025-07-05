@@ -1,0 +1,38 @@
+services:
+  sphraiva-mcp-host:
+    image: ${DOCKER_REGISTRY-}sphraiva-mcp-host
+    container_name: sphraiva-mcp-host
+    build:
+      context: .
+      dockerfile: src/MCP.Host/Dockerfile
+
+  sphraiva-mcp-server:
+    image: ${DOCKER_REGISTRY-}sphraiva-mcp-server
+    container_name: sphraiva-mcp-server
+    build:
+      context: .
+      dockerfile: src/MCP.Server/Dockerfile
+
+  ollama-model:
+    image: ${DOCKER_REGISTRY-}sphraiva-ollama-mcp-ollama
+    container_name: sphraiva-ollama
+    build:
+      context: .
+      dockerfile: src/Budize.MCP.Ollama/Dockerfile
+    ports:
+      - "20010:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      - OLLAMA_MODEL=mistral
+      - OLLAMA_API_PORT=11434
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  ollama-models:

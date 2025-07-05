@@ -1,4 +1,17 @@
 <Solution>
-  <Folder Name="/src/" />
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/MCP.Host/MCP.Host.csproj" Id="39ff53f4-159e-4c34-b94b-f96e7b37ea14" />
+    <Project Path="src/MCP.Server/MCP.Server.csproj" Id="96162065-a234-41a6-8e11-221232945dde" />
+  </Folder>
+  <Folder Name="/src/Ollama/">
+    <File Path="src/Ollama/Dockerfile" />
+  </Folder>
   <Folder Name="/tests/" />
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
 </Solution>
