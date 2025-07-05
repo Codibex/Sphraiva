@@ -18,9 +18,9 @@ services:
     container_name: sphraiva-ollama
     build:
       context: .
-      dockerfile: src/Budize.MCP.Ollama/Dockerfile
+      dockerfile: src/Ollama/Dockerfile
     ports:
-      - "20010:11434"
+      - "20005:11434"
     volumes:
       - ollama-models:/root/.ollama
     environment:
