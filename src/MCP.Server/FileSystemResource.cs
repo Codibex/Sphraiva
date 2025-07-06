@@ -1,5 +1,7 @@
 using ModelContextProtocol.Server;
 
+namespace MCP.Server;
+
 [McpServerResourceType]
 public static class FileSystemResource
 {

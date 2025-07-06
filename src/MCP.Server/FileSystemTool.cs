@@ -1,43 +1,43 @@
 using ModelContextProtocol.Server;
 
+namespace MCP.Server;
+
 [McpServerToolType]
 public static class FileSystemTool
 {
     [McpServerTool(Title = "Read file", Destructive = false, Idempotent = true, ReadOnly = true, UseStructuredContent = true)]
-    public static Task<ReadFileResult> ReadFile(ReadFileParameters parameters)
+    public static Task<ReadFileResult> ReadFile(string file)
     {
-        string? path = parameters.Path;
-        if (string.IsNullOrWhiteSpace(path))
+        if (string.IsNullOrWhiteSpace(file))
             throw new ArgumentException("Path is required");
 
-        path = $"../data/{path}";
+        var path = $"../data/{file}";
 
         var content = File.ReadAllText(path);
-        return Task.FromResult(ReadFileResult.SuccessResult(content));
+        var result = ReadFileResult.SuccessResult(content);
+        return Task.FromResult(result);
     }
 
     [McpServerTool(Title = "Write file", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
-    public static Task<WriteFileResult> WriteFile(WriteFileParameters parameters)
+    public static Task<WriteFileResult> WriteFile(string file, string content)
     {
-        string? path = parameters.Path;
-        string? content = parameters.Content;
-        if (string.IsNullOrWhiteSpace(path))
-            throw new ArgumentException("Path is required");
-        File.WriteAllText(path, content ?? "");
+        File.WriteAllText(file, content);
         return Task.FromResult(WriteFileResult.SuccessResult());
     }
 }
 
-public record ReadFileParameters(string Path);
-public record ReadFileResult(string? Content, string? ErrorMessage = null)
+public record ResultBase<T>(bool Success, T? Result, string? ErrorMessage)
 {
-    public static ReadFileResult SuccessResult(string content) => new(content);
-    public static ReadFileResult Failure(string errorMessage) => new(null, errorMessage);
+};
+
+public record ReadFileResult(bool Success, string? Content, string? ErrorMessage) : ResultBase<string?>(Success, Content, ErrorMessage)
+{
+    public static ReadFileResult SuccessResult(string? content) => new(true, content, null);
+    public static ReadFileResult FailureResult(string errorMessage) => new(false, null, errorMessage);
 }
 
-public record WriteFileParameters(string Path, string Content);
-public record WriteFileResult(bool Success, string? ErrorMessage = null)
+public record WriteFileResult(bool Success, string? ErrorMessage) : ResultBase<string>(Success, null, ErrorMessage)
 {
-    public static WriteFileResult SuccessResult() => new(true);
-    public static WriteFileResult Failure(string errorMessage) => new(false, errorMessage);
+    public static WriteFileResult SuccessResult() => new(true, null);
+    public static WriteFileResult FailureResult(string errorMessage) => new(false, errorMessage);
 }

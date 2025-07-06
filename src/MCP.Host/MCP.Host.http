@@ -9,3 +9,11 @@ Accept: application/json
 }
 
 ###
+
+POST {{MCP.Host_HostAddress}}/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+  "message": "can you provide me the Recipe.md file content?"
+}
