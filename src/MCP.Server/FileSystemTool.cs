@@ -26,6 +26,7 @@ public static class FileSystemTool
     }
 }
 
+// See best practice here https://modelcontextprotocol.io/docs/concepts/tools#error-handling-2
 public record ResultBase<T>(bool Success, T? Result, string? ErrorMessage)
 {
 };
