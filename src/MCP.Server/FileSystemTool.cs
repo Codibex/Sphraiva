@@ -1,9 +1,9 @@
 using ModelContextProtocol.Server;
 
-[McpServerResourceType]
+[McpServerToolType]
 public static class FileSystemTool
 {
-    [McpServerResource]
+    [McpServerTool]
     public static Task<object?> ReadFile(dynamic parameters)
     {
         string? path = parameters?.path as string;
@@ -13,7 +13,7 @@ public static class FileSystemTool
         return Task.FromResult<object?>(new { content });
     }
 
-    [McpServerResource]
+    [McpServerTool]
     public static Task<object?> WriteFile(dynamic parameters)
     {
         string? path = parameters?.path as string;
@@ -22,14 +22,5 @@ public static class FileSystemTool
             throw new ArgumentException("Path is required");
         File.WriteAllText(path, content ?? "");
         return Task.FromResult<object?>(new { success = true });
-    }
-
-    [McpServerResource]
-    public static Task<object?> ListDirectory(dynamic parameters)
-    {
-        string? path = parameters?.path as string ?? ".";
-        var files = Directory.GetFiles(path);
-        var dirs = Directory.GetDirectories(path);
-        return Task.FromResult<object?>(new { files, dirs });
     }
 }
