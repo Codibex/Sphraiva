@@ -9,6 +9,9 @@ public static class FileSystemTool
         string? path = parameters.Path;
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("Path is required");
+
+        path = $"../data/{path}";
+
         var content = File.ReadAllText(path);
         return Task.FromResult(ReadFileResult.SuccessResult(content));
     }

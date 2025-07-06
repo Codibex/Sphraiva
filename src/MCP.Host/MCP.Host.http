@@ -1,6 +1,11 @@
-@MCP.Host_HostAddress = http://localhost:5052
+@MCP.Host_HostAddress = http://localhost:20010
 
-GET {{MCP.Host_HostAddress}}/weatherforecast/
+POST {{MCP.Host_HostAddress}}/chat
+Content-Type: application/json
 Accept: application/json
+
+{
+  "message": "Call the function read_file with the parameter { \"Path\": \"Recipe.md\" }"
+}
 
 ###
