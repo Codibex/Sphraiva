@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Text.Json;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
 namespace MCP.Server;
@@ -5,13 +8,24 @@ namespace MCP.Server;
 [McpServerResourceType]
 public static class FileSystemResource
 {
-    [McpServerResource]
-    public static Task<object?> ListDirectory(dynamic parameters)
+    /// <summary>
+    /// Does not work with path parameter in the current implementation of mcp.
+    /// Client does not list the method.
+    /// </summary>
+    /// <returns></returns>
+    [McpServerResource()]
+    [Description("Returns a list of directories and files for the provided path.")]
+    public static TextResourceContents ListDataDirectory()
     {
-        string? path = parameters?.path as string ?? ".";
+        var path = "../data";
         var files = Directory.GetFiles(path);
         var dirs = Directory.GetDirectories(path);
-        return Task.FromResult<object?>(new { files, dirs });
+        var result = new FileSystemResourceResult(dirs, files);
+        return new TextResourceContents
+        {
+            Text = JsonSerializer.Serialize(result)
+        };
     }
-
 }
+
+public record FileSystemResourceResult(IReadOnlyCollection<string> DirectoriesBuilder, IReadOnlyCollection<string> Files);
