@@ -3,20 +3,31 @@
 
 <PageTitle>Chat</PageTitle>  
 
-<h1>Weather</h1>  
-
-<p>This component demonstrates showing data.</p>  
-
-<InputTextArea @bind-Value="@_inputText"></InputTextArea>
-<button Color="ButtonColor.Primary" @onclick="Send">Send</button>
-@if (_isLoading)
-{  
-    <p><em>Loading...</em></p>  
-}  
-else  
-{
-    <p>Result: @((MarkupString)FormatResult(_result))</p>
-}  
+<MudPaper Class="pa-4 mx-auto" MaxWidth="500px" Elevation="4">
+    <MudText Typo="Typo.h5" GutterBottom="true">Chat</MudText>
+    <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true"/>
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading" Class="mt-2">
+        Send
+        @if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2" />
+        }
+    </MudButton>
+    <MudDivider Class="my-4" />
+    <MudText Typo="Typo.subtitle2" GutterBottom="true">Response:</MudText>
+    <MudPaper Class="pa-2" Elevation="1" Style="min-height:60px;">
+        @if (_isLoading)
+        {
+            <MudText Color="Color.Info"><em>Loading...</em></MudText>
+        }
+        else
+        {
+            <MudText>
+                @((MarkupString)FormatResult(_result))
+            </MudText>
+        }
+    </MudPaper>
+</MudPaper>
 
 @code {  
     private string _inputText = string.Empty;
