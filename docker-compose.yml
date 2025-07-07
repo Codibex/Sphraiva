@@ -1,4 +1,10 @@
 services:
+  sphraiva-mcp-web-app:
+    image: ${DOCKER_REGISTRY-}mcpwebapp
+    build:
+      context: .
+      dockerfile: src/MCP.WebApp/MCP.WebApp/Dockerfile
+
   sphraiva-mcp-host:
     image: ${DOCKER_REGISTRY-}sphraiva-mcp-host
     container_name: sphraiva-mcp-host

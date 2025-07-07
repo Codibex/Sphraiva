@@ -5,7 +5,8 @@
       "commandVersion": "1.0",
       "serviceActions": {
         "sphraiva-mcp-host": "StartDebugging",
-        "sphraiva-mcp-server": "StartDebugging"
+        "sphraiva-mcp-server": "StartDebugging",
+        "sphraiva-mcp-web-app": "StartDebugging"
       }
     }
   }
