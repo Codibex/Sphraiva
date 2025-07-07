@@ -1,4 +1,3 @@
-using MCP.WebApp.Client.Pages;
 using MCP.WebApp.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +6,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
+
+builder.Services.AddScoped<IMcpService, McpService>();
+
+builder.Services.AddHttpClient<IMcpHttpClient, McpHttpClient>(options =>
+{
+    options.BaseAddress = new Uri("http://sphraiva-mcp-host:8080/");
+});
 
 var app = builder.Build();
 
@@ -23,7 +29,6 @@ else
 }
 
 app.UseHttpsRedirection();
-
 
 app.UseAntiforgery();
 

@@ -1,0 +1,50 @@
+﻿@page "/Chat"  
+
+
+<PageTitle>Chat</PageTitle>  
+
+<h1>Weather</h1>  
+
+<p>This component demonstrates showing data.</p>  
+
+<InputTextArea @bind-Value="@_inputText"></InputTextArea>
+<button Color="ButtonColor.Primary" @onclick="Send">Send</button>
+@if (_isLoading)
+{  
+    <p><em>Loading...</em></p>  
+}  
+else  
+{
+    <p>Result: @((MarkupString)FormatResult(_result))</p>
+}  
+
+@code {  
+    private string _inputText = string.Empty;
+    private bool _isLoading;
+    private string? _result;
+
+    [Inject] public required IMcpService McpService { get; set; }
+
+    private async Task Send()  
+    {
+        try
+        {
+            _isLoading = true;
+            _result = await McpService.ChatAsync(_inputText);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }  
+
+    private string FormatResult(string? result)
+    {
+        return result?.Replace(@"\r\n", "<br />").Replace(@"\n", "<br />") ?? "No response";
+    }
+}
