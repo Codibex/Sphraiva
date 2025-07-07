@@ -9,5 +9,7 @@
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.59.0-alpha" />
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.3.0-preview.2" />
+    <PackageVersion Include="MudBlazor" Version="8.9.0" />
+    <PackageVersion Include="MudBlazor.ThemeManager" Version="3.0.0" />
   </ItemGroup>
 </Project>
