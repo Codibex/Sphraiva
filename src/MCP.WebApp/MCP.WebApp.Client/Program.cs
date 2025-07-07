@@ -8,6 +8,7 @@ await builder.Build().RunAsync();
 public interface IMcpHttpClient
 {
     Task<string> ChatAsync(string message);
+    Task<string> AgentAsync(string message);
 }
 
 public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
@@ -21,11 +22,22 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync();
     }
+
+    public async Task<string> AgentAsync(string message)
+    {
+        var response = await httpClient.PostAsJsonAsync("agent", new
+        {
+            message = message
+        });
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    }
 }
 
 public interface IMcpService
 {
     Task<string> ChatAsync(string message);
+    Task<string> AgentAsync(string message);
 }
 
 public class McpService(IMcpHttpClient mcpHttpClient) : IMcpService
@@ -33,5 +45,10 @@ public class McpService(IMcpHttpClient mcpHttpClient) : IMcpService
     public async Task<string> ChatAsync(string message)
     {
         return await mcpHttpClient.ChatAsync(message);
+    }
+
+    public async Task<string> AgentAsync(string message)
+    {
+        return await mcpHttpClient.AgentAsync(message);
     }
 }

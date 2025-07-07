@@ -1,7 +1,7 @@
-﻿@page "/chat"  
+﻿@page "/agent"  
 
 
-<PageTitle>Chat</PageTitle>  
+<PageTitle>Agent</PageTitle>  
 
 <MudPaper Class="pa-4 mx-auto" MaxWidth="500px" Elevation="4">
     <MudText Typo="Typo.h5" GutterBottom="true">Chat</MudText>
@@ -41,7 +41,7 @@
         try
         {
             _isLoading = true;
-            _result = await McpService.ChatAsync(_inputText);
+            _result = await McpService.AgentAsync(_inputText);
         }
         catch (Exception e)
         {
