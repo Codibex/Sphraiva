@@ -9,15 +9,14 @@ namespace MCP.Server;
 public static class FileSystemResource
 {
     /// <summary>
-    /// Does not work with path parameter in the current implementation of mcp.
-    /// Client does not list the method.
+    /// Template resource for listing files and directories in a specified path.
     /// </summary>
+    /// <param name="path"></param>
     /// <returns></returns>
     [McpServerResource()]
     [Description("Returns a list of directories and files for the provided path.")]
-    public static TextResourceContents ListDataDirectory()
+    public static TextResourceContents ListDataDirectory(string path)
     {
-        var path = "../data";
         var files = Directory.GetFiles(path);
         var dirs = Directory.GetDirectories(path);
         var result = new FileSystemResourceResult(dirs, files);

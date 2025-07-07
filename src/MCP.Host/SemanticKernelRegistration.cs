@@ -35,6 +35,7 @@ public static class SemanticKernelRegistration
 
         var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
         var resources = await mcpClient.ListResourcesAsync().ConfigureAwait(false);
+        var templateResources = await mcpClient.ListResourceTemplatesAsync().ConfigureAwait(false);
 
         kernel.Plugins.AddFromFunctions("Sphraiva", tools.Select(t => t.AsKernelFunction()));
     }
