@@ -1,3 +1,5 @@
+using MCP.Server.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
@@ -7,6 +9,8 @@ builder.Services
     .WithToolsFromAssembly()
     .WithResourcesFromAssembly()
     .WithPromptsFromAssembly();
+
+builder.Services.AddScoped<IFileSystemService, FileSystemService>();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

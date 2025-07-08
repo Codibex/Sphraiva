@@ -1,5 +1,7 @@
-using System.ComponentModel;
+using MCP.Server.Extensions;
+using MCP.Server.Services;
 using ModelContextProtocol.Server;
+using System.ComponentModel;
 
 namespace MCP.Server;
 
@@ -31,16 +33,18 @@ public static class FileSystemTool
         - "Show the contents of the file named Recipe.md."
         """
     )]
-    public static Task<ReadFileResult> ReadFile(string file)
+    public static async Task<ReadFileResult> ReadFile(IMcpServer server, string file)
     {
-        if (string.IsNullOrWhiteSpace(file))
-            throw new ArgumentException("Path is required");
+        if(!server.TryGetService< IFileSystemService>(out var fileSystemService))
+        {
+            return ReadFileResult.FailureResult("File system service is not available.");
+        }
 
-        var path = $"../data/{file}";
+        var result = await fileSystemService.ReadFileAsync(file);
 
-        var content = File.ReadAllText(path);
-        var result = ReadFileResult.SuccessResult(content);
-        return Task.FromResult(result);
+        return result.IsSuccess 
+            ? ReadFileResult.SuccessResult(result.Data) 
+            : ReadFileResult.FailureResult(result.ErrorMessage!);
     }
 
     [McpServerTool(Title = "Write file", Destructive = false, Idempotent = false, ReadOnly = false,
@@ -64,26 +68,34 @@ public static class FileSystemTool
         - "Save the following content into the file Recipe.md."
         """
     )]
-    public static Task<WriteFileResult> WriteFile(string file, string content)
+    public static async Task<WriteFileResult> WriteFile(IMcpServer server, string file, string content)
     {
-        File.WriteAllText(file, content);
-        return Task.FromResult(WriteFileResult.SuccessResult());
+        if (!server.TryGetService<IFileSystemService>(out var fileSystemService))
+        {
+            return WriteFileResult.FailureResult("File system service is not available.");
+        }
+
+        var result = await fileSystemService.WriteFileAsync(file, content);
+
+        return result.IsSuccess
+            ? WriteFileResult.SuccessResult()
+            : WriteFileResult.FailureResult(result.ErrorMessage!);
     }
 }
 
 // See best practice here https://modelcontextprotocol.io/docs/concepts/tools#error-handling-2
-public record ResultBase<T>(bool Success, T? Result, string? ErrorMessage)
+public record ResultBase<T>(bool IsError, T? Result, string? ErrorMessage)
 {
 };
 
-public record ReadFileResult(bool Success, string? Content, string? ErrorMessage) : ResultBase<string?>(Success, Content, ErrorMessage)
+public record ReadFileResult(bool IsError, string? Content, string? ErrorMessage) : ResultBase<string?>(IsError, Content, ErrorMessage)
 {
-    public static ReadFileResult SuccessResult(string? content) => new(true, content, null);
-    public static ReadFileResult FailureResult(string errorMessage) => new(false, null, errorMessage);
+    public static ReadFileResult SuccessResult(string? content) => new(false, content, null);
+    public static ReadFileResult FailureResult(string errorMessage) => new(true, null, errorMessage);
 }
 
-public record WriteFileResult(bool Success, string? ErrorMessage) : ResultBase<string>(Success, null, ErrorMessage)
+public record WriteFileResult(bool IsError, string? ErrorMessage) : ResultBase<string>(IsError, null, ErrorMessage)
 {
-    public static WriteFileResult SuccessResult() => new(true, null);
-    public static WriteFileResult FailureResult(string errorMessage) => new(false, errorMessage);
+    public static WriteFileResult SuccessResult() => new(false, null);
+    public static WriteFileResult FailureResult(string errorMessage) => new(true, errorMessage);
 }
