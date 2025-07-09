@@ -1,0 +1,21 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/MCP.Host/MCP.Host.csproj" Id="39ff53f4-159e-4c34-b94b-f96e7b37ea14" />
+    <Project Path="src/MCP.Server/MCP.Server.csproj" Id="96162065-a234-41a6-8e11-221232945dde" />
+    <Project Path="src/MCP.WebApp/MCP.WebApp.Client/MCP.WebApp.Client.csproj" Id="5e3780e5-c52f-41e2-af38-14f8cbe9a8f2" />
+    <Project Path="src/MCP.WebApp/MCP.WebApp/MCP.WebApp.csproj" Id="45a2a171-80f7-4373-b366-ef03c963018d" />
+  </Folder>
+  <Folder Name="/src/Ollama/">
+    <File Path="src/Ollama/Dockerfile" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/TestResults/" />
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
+</Solution>
