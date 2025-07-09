@@ -1,4 +1,3 @@
-using MCP.Server.Extensions;
 using MCP.Server.Services;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
@@ -13,7 +12,7 @@ namespace MCP.Server;
     All file paths must be relative to the server's data directory for security reasons.
     """
 )]
-public static class FileSystemTool
+public class FileSystemTool(IFileSystemService fileSystemService)
 {
     [McpServerTool(Title = "Read file", Destructive = false, Idempotent = true, ReadOnly = true, UseStructuredContent = true)]
     [Description(
@@ -33,13 +32,8 @@ public static class FileSystemTool
         - "Show the contents of the file named Recipe.md."
         """
     )]
-    public static async Task<ReadFileResult> ReadFile(IMcpServer server, string file)
+    public async Task<ReadFileResult> ReadFile(string file)
     {
-        if(!server.TryGetService< IFileSystemService>(out var fileSystemService))
-        {
-            return ReadFileResult.FailureResult("File system service is not available.");
-        }
-
         var result = await fileSystemService.ReadFileAsync(file);
         return result.IsSuccess 
             ? ReadFileResult.SuccessResult(result.Data) 
@@ -67,13 +61,8 @@ public static class FileSystemTool
         - "Save the following content into the file Recipe.md."
         """
     )]
-    public static async Task<WriteFileResult> WriteFile(IMcpServer server, string file, string content)
+    public async Task<WriteFileResult> WriteFile(string file, string content)
     {
-        if (!server.TryGetService<IFileSystemService>(out var fileSystemService))
-        {
-            return WriteFileResult.FailureResult("File system service is not available.");
-        }
-
         var result = await fileSystemService.WriteFileAsync(file, content);
         return result.IsSuccess
             ? WriteFileResult.SuccessResult()
@@ -93,13 +82,8 @@ public static class FileSystemTool
         - "Erase Recipe.md from the data directory."
         """
     )]
-    public static async Task<DeleteFileResponse> DeleteFile(IMcpServer server, string file)
+    public async Task<DeleteFileResponse> DeleteFile(string file)
     {
-        if (!server.TryGetService<IFileSystemService>(out var fileSystemService))
-        {
-            return DeleteFileResponse.FailureResult("File system service is not available.");
-        }
-
         var result = await fileSystemService.DeleteFileAsync(file);
         return result.IsSuccess ? DeleteFileResponse.SuccessResult() : DeleteFileResponse.FailureResult(result.ErrorMessage!);
     }
@@ -117,13 +101,8 @@ public static class FileSystemTool
         - "List everything in 'myfolder'."
         """
     )]
-    public static async Task<ListDirectoryResponse> ListDirectory(IMcpServer server, string directory)
+    public async Task<ListDirectoryResponse> ListDirectory(string directory)
     {
-        if (!server.TryGetService<IFileSystemService>(out var fileSystemService))
-        {
-            return ListDirectoryResponse.FailureResult("File system service is not available.");
-        }
-
         var result = await fileSystemService.ListDirectoryAsync(directory);
         return result is { IsSuccess: true, Data: not null }
             ? ListDirectoryResponse.SuccessResult(result.Data.Directories, result.Data.Files)
@@ -142,13 +121,8 @@ public static class FileSystemTool
         - "Add a directory 'backup'."
         """
     )]
-    public static async Task<CreateDirectoryResponse> CreateDirectory(IMcpServer server, string directory)
+    public async Task<CreateDirectoryResponse> CreateDirectory(string directory)
     {
-        if (!server.TryGetService<IFileSystemService>(out var fileSystemService))
-        {
-            return CreateDirectoryResponse.FailureResult("File system service is not available.");
-        }
-
         var result = await fileSystemService.CreateDirectoryAsync(directory);
         return result.IsSuccess ? CreateDirectoryResponse.SuccessResult() : CreateDirectoryResponse.FailureResult(result.ErrorMessage!);
     }
@@ -165,13 +139,8 @@ public static class FileSystemTool
         - "Erase '2023' directory."
         """
     )]
-    public static async Task<DeleteDirectoryResponse> DeleteDirectory(IMcpServer server, string directory)
+    public async Task<DeleteDirectoryResponse> DeleteDirectory(string directory)
     {
-        if (!server.TryGetService<IFileSystemService>(out var fileSystemService))
-        {
-            return DeleteDirectoryResponse.FailureResult("File system service is not available.");
-        }
-
         var result = await fileSystemService.DeleteDirectoryAsync(directory);
         return result.IsSuccess ? DeleteDirectoryResponse.SuccessResult() : DeleteDirectoryResponse.FailureResult(result.ErrorMessage!);
     }
@@ -189,13 +158,8 @@ public static class FileSystemTool
         - "Move 'notes.txt' into the 'docs' folder."
         """
     )]
-    public static async Task<MoveFileResponse> MoveFile(IMcpServer server, string sourceFile, string destFile)
+    public async Task<MoveFileResponse> MoveFile(string sourceFile, string destFile)
     {
-        if (!server.TryGetService<IFileSystemService>(out var fileSystemService))
-        {
-            return MoveFileResponse.FailureResult("File system service is not available.");
-        }
-
         var result = await fileSystemService.MoveFileAsync(sourceFile, destFile);
         return result.IsSuccess ? MoveFileResponse.SuccessResult() : MoveFileResponse.FailureResult(result.ErrorMessage!);
     }
@@ -213,13 +177,8 @@ public static class FileSystemTool
         - "Copy 'image.png' into the 'images' folder."
         """
     )]
-    public static async Task<CopyFileResponse> CopyFile(IMcpServer server, string sourceFile, string destFile)
+    public async Task<CopyFileResponse> CopyFile(string sourceFile, string destFile)
     {
-        if (!server.TryGetService<IFileSystemService>(out var fileSystemService))
-        {
-            return CopyFileResponse.FailureResult("File system service is not available.");
-        }
-
         var result = await fileSystemService.CopyFileAsync(sourceFile, destFile);
         return result.IsSuccess ? CopyFileResponse.SuccessResult() : CopyFileResponse.FailureResult(result.ErrorMessage!);
     }
@@ -236,13 +195,8 @@ public static class FileSystemTool
         - "What are the properties of 'image.png'?"
         """
     )]
-    public static async Task<StatisticResponse> Statistic(IMcpServer server, string path)
+    public async Task<StatisticResponse> Statistic(string path)
     {
-        if (!server.TryGetService<IFileSystemService>(out var fileSystemService))
-        {
-            return StatisticResponse.FailureResult("File system service is not available.");
-        }
-
         var result = await fileSystemService.GetStatisticAsync(path);
         return result is { IsSuccess: true, Data: not null }
             ? StatisticResponse.SuccessResult(result.Data)
@@ -261,13 +215,8 @@ public static class FileSystemTool
         - "Check if 'notes.txt' is present."
         """
     )]
-    public static async Task<ExistsResponse> Exists(IMcpServer server, string path)
+    public async Task<ExistsResponse> Exists(string path)
     {
-        if (!server.TryGetService<IFileSystemService>(out var fileSystemService))
-        {
-            return ExistsResponse.FailureResult("File system service is not available.");
-        }
-
         var result = await fileSystemService.ExistsAsync(path);
         return result.IsSuccess ? ExistsResponse.SuccessResult(result.Data) : ExistsResponse.FailureResult(result.ErrorMessage!);
     }
