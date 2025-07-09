@@ -1,4 +1,5 @@
 using MCP.Server.Services;
+using MCP.Server.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,13 @@ builder.Services
     .WithPromptsFromAssembly();
 
 builder.Services.AddScoped<IFileSystemService, FileSystemService>();
+builder.Services.AddScoped<IDevContainerService, DevContainerService>();
+
+builder.Services
+    .AddOptions<DevContainerSettings>()
+    .Bind(builder.Configuration.GetSection(nameof(DevContainerSettings)))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

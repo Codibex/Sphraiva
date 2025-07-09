@@ -42,3 +42,4 @@ services:
       - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
       - ./data:/agent_data
       - ./testdata:/data
+      - /var/run/docker.sock:/var/run/docker.sock # For Docker-in-Docker support

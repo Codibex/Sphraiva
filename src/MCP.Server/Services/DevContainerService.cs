@@ -93,13 +93,8 @@ public class DevContainerService(IOptions<DevContainerSettings> options) : IDevC
         );
     }
 
-    private static DockerClient CreateDockerClient()
-    {
-        var uri = Environment.OSVersion.Platform == PlatformID.Win32NT
-            ? "npipe://./pipe/docker_engine"
-            : "unix:///var/run/docker.sock";
-        return new DockerClientConfiguration(new Uri(uri)).CreateClient();
-    }
+    private static DockerClient CreateDockerClient() 
+        => new DockerClientConfiguration(new Uri("unix:///var/run/docker.sock")).CreateClient();
 
     private static string CreateContainerName()
     {
