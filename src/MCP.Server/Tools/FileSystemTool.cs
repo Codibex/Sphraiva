@@ -2,7 +2,7 @@ using MCP.Server.Services;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 
-namespace MCP.Server;
+namespace MCP.Server.Tools;
 
 [McpServerToolType]
 [Description(

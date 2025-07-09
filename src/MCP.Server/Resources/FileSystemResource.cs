@@ -3,7 +3,7 @@ using System.Text.Json;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
-namespace MCP.Server;
+namespace MCP.Server.Resources;
 
 [McpServerResourceType]
 public static class FileSystemResource
