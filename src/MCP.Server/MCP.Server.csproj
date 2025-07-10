@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
+    <PackageReference Include="SharpCompress" />
   </ItemGroup>
 
 </Project>

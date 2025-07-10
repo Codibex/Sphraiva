@@ -8,8 +8,12 @@ using System.Text;
 
 namespace MCP.Server.Services;
 
-public class DevContainerService(IOptions<DevContainerSettings> options) : IDevContainerService
+public class DevContainerService(
+    IOptions<DevContainerSettings> options,
+    IDockerTarService dockerTarService) : IDevContainerService
 {
+    private const string DOCKER_TAR_FILE_NAME = "docker.tar";
+    private const string DOCKER_FILE_NAME = "DockerFile";
     private const string CONTAINER_BASE_NAME = "agent-dev-";
     private const string IMAGE_BASE_NAME = "agent-dev-img-";
 
@@ -23,12 +27,12 @@ public class DevContainerService(IOptions<DevContainerSettings> options) : IDevC
             return OperationResult<string>.Failure("File not found!");
         }
 
-        var dockerfilePath = await CopyDockerFile(path);
+        var dockerfilePath = dockerTarService.CreateDockerTar(path, DOCKER_TAR_FILE_NAME, DOCKER_FILE_NAME);
         var imageToUse = IMAGE_BASE_NAME + _settings.DevContainerImageName;
         var containerName = CreateContainerName();
         using var client = CreateDockerClient();
 
-        var imageTag = imageToUse.Replace("_DockerFile", "");
+        var imageTag = imageToUse.Replace($"_{DOCKER_FILE_NAME}", "");
         var images = await client.Images.ListImagesAsync(new ImagesListParameters { All = true });
         var imageExists = images.Any(img => (img.RepoTags != null) && img.RepoTags.Contains(imageTag + ":latest"));
         if (!imageExists)
@@ -67,24 +71,11 @@ public class DevContainerService(IOptions<DevContainerSettings> options) : IDevC
         return OperationResult.Success();
     }
 
-    private static async Task<string> CopyDockerFile(string path)
-    {
-        var tempDir = Path.Combine(Path.GetTempPath(), "DockerImages");
-        Directory.CreateDirectory(tempDir);
-
-        var dockerfilePath = Path.Combine(tempDir, "Dockerfile");
-
-        var dockerFileContent = await File.ReadAllTextAsync(path);
-        await File.WriteAllTextAsync(dockerfilePath, dockerFileContent);
-
-        return dockerfilePath;
-    }
-
     private static async Task BuildImage(DockerClient client, string dockerfilePath, string imageTag)
     {
-        var fs = File.OpenRead(dockerfilePath);
+        await using var fs = File.OpenRead(dockerfilePath);
 
-        var buildParams = new ImageBuildParameters { Dockerfile = "Dockerfile", Tags = [imageTag] };
+        var buildParams = new ImageBuildParameters { Dockerfile = DOCKER_FILE_NAME, Tags = [imageTag] };
         await client.Images.BuildImageFromDockerfileAsync(
             buildParams,
             fs,

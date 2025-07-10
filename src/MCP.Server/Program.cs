@@ -13,6 +13,7 @@ builder.Services
 
 builder.Services.AddScoped<IFileSystemService, FileSystemService>();
 builder.Services.AddScoped<IDevContainerService, DevContainerService>();
+builder.Services.AddScoped<IDockerTarService, DockerTarService>();
 
 builder.Services
     .AddOptions<DevContainerSettings>()
