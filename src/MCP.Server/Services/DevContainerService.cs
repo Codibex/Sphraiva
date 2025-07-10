@@ -63,12 +63,19 @@ public class DevContainerService(
             $"GIT_USER_EMAIL={gitConfig.UserEmail}"
         };
 
+        var hostConfig = new HostConfig();
+        if (_settings.VolumeBinds is not null && _settings.VolumeBinds.Count > 0)
+        {
+            hostConfig.Binds = _settings.VolumeBinds.ToList();
+        }
+
         var response = await client.Containers.CreateContainerAsync(new CreateContainerParameters
         {
             Image = imageTag,
             Name = containerName,
             Tty = false,
-            Env = envVars
+            Env = envVars,
+            HostConfig = hostConfig.Binds != null ? hostConfig : null
         });
 
         var started = await client.Containers.StartContainerAsync(response.ID, null);
