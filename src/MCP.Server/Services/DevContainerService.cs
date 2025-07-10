@@ -28,11 +28,12 @@ public class DevContainerService(IOptions<DevContainerSettings> options) : IDevC
         var containerName = CreateContainerName();
         using var client = CreateDockerClient();
 
+        var imageTag = imageToUse.Replace("_DockerFile", "");
         var images = await client.Images.ListImagesAsync(new ImagesListParameters { All = true });
-        var imageExists = images.Any(img => (img.RepoTags != null) && img.RepoTags.Contains(imageToUse + ":latest"));
+        var imageExists = images.Any(img => (img.RepoTags != null) && img.RepoTags.Contains(imageTag + ":latest"));
         if (!imageExists)
         {
-            await BuildImage(client, dockerfilePath, imageToUse);
+            await BuildImage(client, dockerfilePath, imageTag);
         }
 
         var response = await client.Containers.CreateContainerAsync(new CreateContainerParameters
@@ -79,11 +80,11 @@ public class DevContainerService(IOptions<DevContainerSettings> options) : IDevC
         return dockerfilePath;
     }
 
-    private static async Task BuildImage(DockerClient client, string dockerfilePath, string imageToUse)
+    private static async Task BuildImage(DockerClient client, string dockerfilePath, string imageTag)
     {
-        await using var fs = File.OpenRead(dockerfilePath);
+        var fs = File.OpenRead(dockerfilePath);
 
-        var buildParams = new ImageBuildParameters { Dockerfile = "Dockerfile", Tags = [imageToUse] };
+        var buildParams = new ImageBuildParameters { Dockerfile = "Dockerfile", Tags = [imageTag] };
         await client.Images.BuildImageFromDockerfileAsync(
             buildParams,
             fs,
@@ -93,8 +94,9 @@ public class DevContainerService(IOptions<DevContainerSettings> options) : IDevC
         );
     }
 
-    private static DockerClient CreateDockerClient() 
-        => new DockerClientConfiguration(new Uri("unix:///var/run/docker.sock")).CreateClient();
+    private static DockerClient CreateDockerClient()
+        //=> new DockerClientConfiguration(new Uri(@"unix:///var/run/docker.sock")).CreateClient();
+        => new DockerClientConfiguration().CreateClient();
 
     private static string CreateContainerName()
     {

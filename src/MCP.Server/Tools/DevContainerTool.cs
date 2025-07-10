@@ -19,7 +19,6 @@ public class DevContainerTool(IDevContainerService devContainerService)
         """
         Creates a Docker development container on the server.
         - The container name is generated in the format 'agent-dev-XXXXXXXXXX'.
-        - Optionally builds an image from a Dockerfile before creating the container (if configured).
         Returns the name of the created container if successful, or an error message if the operation fails.
         Sample phrases:
         - "Create a new dev container."
