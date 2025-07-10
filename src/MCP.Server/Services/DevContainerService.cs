@@ -8,6 +8,18 @@ using System.Text;
 
 namespace MCP.Server.Services;
 
+public record GitConfig(string UserName, string UserEmail)
+{
+    public bool IsValid()
+    {
+        if (string.IsNullOrWhiteSpace(UserName) || string.IsNullOrWhiteSpace(UserEmail))
+        {
+            return false;
+        }
+        return true;
+    }
+};
+
 public class DevContainerService(
     IOptions<DevContainerSettings> options,
     IDockerTarService dockerTarService) : IDevContainerService
@@ -19,8 +31,13 @@ public class DevContainerService(
 
     private readonly DevContainerSettings _settings = options.Value;
 
-    public async Task<OperationResult<string>> CreateDevContainerAsync()
+    public async Task<OperationResult<string>> CreateDevContainerAsync(GitConfig gitConfig)
     {
+        if(!gitConfig.IsValid())
+        {
+            return OperationResult<string>.Failure("Git user name and email are required.");
+        }
+
         var path = Path.Combine(_settings.DataDirectory, _settings.DevContainerImageName);
         if (!File.Exists(path))
         {
@@ -40,15 +57,22 @@ public class DevContainerService(
             await BuildImage(client, dockerfilePath, imageTag);
         }
 
+        var envVars = new List<string>
+        {
+            $"GIT_USER_NAME={gitConfig.UserName}",
+            $"GIT_USER_EMAIL={gitConfig.UserEmail}"
+        };
+
         var response = await client.Containers.CreateContainerAsync(new CreateContainerParameters
         {
             Image = imageTag,
             Name = containerName,
-            Tty = false
+            Tty = false,
+            Env = envVars
         });
 
         var started = await client.Containers.StartContainerAsync(response.ID, null);
-        return started 
+        return started
             ? OperationResult<string>.Success(containerName)
             : OperationResult<string>.Failure($"Failed to start container {containerName}.");
     }

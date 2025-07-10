@@ -18,7 +18,9 @@ public class DevContainerTool(IDevContainerService devContainerService)
     [Description(
         """
         Creates a Docker development container on the server.
-        - The container name is generated in the format 'agent-dev-XXXXXXXXXX'.
+        - gitUserName: The Git user name to configure in the container.
+        - gitUserEmail: The Git user email to configure in the container.
+        The container name is generated in the format 'agent-dev-XXXXXXXXXX'.
         Returns the name of the created container if successful, or an error message if the operation fails.
         Sample phrases:
         - "Create a new dev container."
@@ -26,9 +28,9 @@ public class DevContainerTool(IDevContainerService devContainerService)
         - "Provision a fresh agent-dev container."
         """
     )]
-    public async Task<CreateDevContainerResult> CreateDevContainerAsync()
+    public async Task<CreateDevContainerResult> CreateDevContainerAsync(string gitUserName, string gitUserEmail)
     {
-        var result = await devContainerService.CreateDevContainerAsync();
+        var result = await devContainerService.CreateDevContainerAsync(new GitConfig(gitUserName, gitUserEmail));
         return result.IsSuccess
             ? CreateDevContainerResult.SuccessResult(result.Data)
             : CreateDevContainerResult.FailureResult(result.ErrorMessage!);
