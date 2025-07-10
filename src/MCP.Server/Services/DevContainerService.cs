@@ -42,7 +42,7 @@ public class DevContainerService(
 
         var response = await client.Containers.CreateContainerAsync(new CreateContainerParameters
         {
-            Image = imageToUse,
+            Image = imageTag,
             Name = containerName,
             Tty = false
         });

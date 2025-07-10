@@ -1,4 +1,5 @@
-﻿using SharpCompress.Archives.Tar;
+﻿using SharpCompress.Archives;
+using SharpCompress.Archives.Tar;
 
 namespace MCP.Server.Services;
 
@@ -14,8 +15,7 @@ public class DockerTarService : IDockerTarService
         using var saveStream = new FileStream(tarPath, FileMode.Create, FileAccess.Write, FileShare.None);
         using var tarArchive = TarArchive.Create();
         
-        using var dockerFileStream = new FileStream(dockerfilePath, FileMode.Open);
-        tarArchive.AddEntry(dockerfileName, dockerFileStream, true);
+        tarArchive.AddEntry(dockerfileName, dockerfilePath);
 
         tarArchive.SaveTo(saveStream, SharpCompress.Common.CompressionType.None);
 
