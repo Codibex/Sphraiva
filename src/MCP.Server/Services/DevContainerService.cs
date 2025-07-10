@@ -15,7 +15,7 @@ public class DevContainerService(
     private const string DOCKER_TAR_FILE_NAME = "docker.tar";
     private const string DOCKER_FILE_NAME = "DockerFile";
     private const string CONTAINER_BASE_NAME = "agent-dev-";
-    private const string IMAGE_BASE_NAME = "agent-dev-img-";
+    private const string IMAGE_BASE_NAME = "agent-dev-";
 
     private readonly DevContainerSettings _settings = options.Value;
 
