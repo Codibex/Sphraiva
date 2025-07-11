@@ -62,7 +62,8 @@ public class DevContainerService(
         var envVars = new List<string>
         {
             $"GIT_USER_NAME={gitConfig.UserName}",
-            $"GIT_USER_EMAIL={gitConfig.UserEmail}"
+            $"GIT_USER_EMAIL={gitConfig.UserEmail}",
+            $"GH_TOKEN={_settings.GithubPatToken}"
         };
 
         var hostConfig = new HostConfig();
