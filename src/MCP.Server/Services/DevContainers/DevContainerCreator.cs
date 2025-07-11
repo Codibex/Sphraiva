@@ -18,7 +18,7 @@ public class DevContainerCreator(
 
     public async Task<DevContainerCreationResult> CreateAsync(DockerImage dockerImage)
     {
-        var githubPatToken = GetGithubPatToken();
+        var githubPatToken = await GetGithubPatTokenAsync();
 
         var envVars = new List<string>
         {
@@ -46,7 +46,7 @@ public class DevContainerCreator(
         return new DevContainerCreationResult(response.ID, containerName);
     }
 
-    private Task<string> GetGithubPatToken()
+    private Task<string> GetGithubPatTokenAsync()
     {
         var file = Path.Combine(_settings.DataDirectory, GITHUB_DIRECTORY, _settings.GithubPatTokenFile);
         return File.ReadAllTextAsync(file);
