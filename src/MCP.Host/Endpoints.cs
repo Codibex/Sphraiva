@@ -15,13 +15,13 @@ public static class Endpoints
             var settings = new OllamaPromptExecutionSettings
             {
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
-                Temperature = 0
+                Temperature = 0,
             };
             //if (kernel.Plugins.TryGetFunction("Sphraiva", "read_file", out var func))
             //{
             //    var foo = await func.InvokeAsync(new KernelArguments()
             //    {
-            //        ["parameters"] = new ReadFileParameters("Recipe.md")
+            //        ["file"] = "Recipe.md"
             //    });
             //}
 
