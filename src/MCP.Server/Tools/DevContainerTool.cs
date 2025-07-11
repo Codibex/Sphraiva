@@ -18,17 +18,18 @@ public class DevContainerTool(IDevContainerService devContainerService)
     [Description(
         """
         Creates a Docker development container on the server.
-        - gitUserName: The Git user name to configure in the container.
-        - gitUserEmail: The Git user email to configure in the container.
-        The container name is generated in the format 'agent-dev-XXXXXXXXXX'.
         Returns the name of the created container if successful, or an error message if the operation fails.
         Sample phrases:
         - "Create a new dev container."
-        - "Start a development container."
         - "Provision a fresh agent-dev container."
         """
     )]
-    public async Task<CreateDevContainerResult> CreateDevContainerAsync(string gitUserName, string gitUserEmail)
+    public async Task<CreateDevContainerResult> CreateDevContainerAsync(
+        [Description("The Git user name to configure in the container")]
+        string gitUserName,
+        [Description("The Git user email to configure in the container")]
+        string gitUserEmail
+    )
     {
         var result = await devContainerService.CreateDevContainerAsync(new GitConfig(gitUserName, gitUserEmail));
         return result.IsSuccess
@@ -40,16 +41,17 @@ public class DevContainerTool(IDevContainerService devContainerService)
     [Description(
         """
         Removes a Docker development container from the server by name.
-        - 'containerName': The name of the container to remove (must be a valid agent-dev container name).
-        Stops the container if it is running and deletes it.
-        Returns a success result if the container was removed, or an error message if the operation fails.
+        Stops the container if running and deletes it.
+        Returns a success result if removed, or an error message if the operation fails.
         Sample phrases:
         - "Remove dev container agent-dev-abc123."
-        - "Delete the development container."
         - "Cleanup agent-dev container by name."
         """
     )]
-    public async Task<CleanupDevContainerResult> CleanupDevContainerAsync(string containerName)
+    public async Task<CleanupDevContainerResult> CleanupDevContainerAsync(
+        [Description("The name of the container to remove (must be a valid agent-dev container name)")]
+        string containerName
+    )
     {
         var result = await devContainerService.CleanupDevContainerAsync(containerName);
         return result.IsSuccess
