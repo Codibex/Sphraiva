@@ -7,9 +7,7 @@ namespace MCP.Server.Tools;
 [McpServerToolType]
 [Description(
     """
-    Exposes server-side file system operations for agents or tools to read from and write to files in the server's data directory.
-    Use these tools to programmatically access or modify file contents as part of automated workflows, agent actions, or user requests.
-    All file paths must be relative to the server's data directory for security reasons.
+    Provides basic file and directory operations in the server's data directory for agents and tools.
     """
 )]
 public class FileSystemTool(IFileSystemService fileSystemService)

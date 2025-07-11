@@ -7,9 +7,7 @@ namespace MCP.Server.Tools;
 [McpServerToolType]
 [Description(
     """
-    Exposes server-side Docker container operations for agents or tools to create and remove development containers. " +
-    "Use these tools to programmatically manage isolated development environments as part of automated workflows, agent actions, or user requests. " +
-    "All container names are generated and managed by the server for security and consistency reasons."
+    Provides operations to create and remove Docker development containers for agents and tools.
     """
 )]
 public class DevContainerTool(IDevContainerService devContainerService)
