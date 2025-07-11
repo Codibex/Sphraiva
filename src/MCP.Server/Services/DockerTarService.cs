@@ -5,7 +5,7 @@ namespace MCP.Server.Services;
 
 public class DockerTarService : IDockerTarService
 {
-    public string CreateDockerTar(string dockerfilePath, string dockerTarFileName, string dockerfileName)
+    public string CreateDockerTar(string dockerFilePath, string dockerTarFileName, string dockerfileName, params string[] additionalFilePaths)
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "DockerImages");
         Directory.CreateDirectory(tempDir);
@@ -15,7 +15,13 @@ public class DockerTarService : IDockerTarService
         using var saveStream = new FileStream(tarPath, FileMode.Create, FileAccess.Write, FileShare.None);
         using var tarArchive = TarArchive.Create();
         
-        tarArchive.AddEntry(dockerfileName, dockerfilePath);
+        tarArchive.AddEntry(dockerfileName, dockerFilePath);
+
+        foreach (var additionalFilePath in additionalFilePaths)
+        {
+            var fileName = Path.GetFileName(additionalFilePath);
+            tarArchive.AddEntry(fileName, additionalFilePath);
+        }
 
         tarArchive.SaveTo(saveStream, SharpCompress.Common.CompressionType.None);
 

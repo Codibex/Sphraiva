@@ -12,9 +12,9 @@ fi
 if [ -n "$GIT_USER_EMAIL" ]; then
   git config --global user.email "$GIT_USER_EMAIL"
 fi
-if [ -n "$GH_TOKEN" ]; then
-  echo "$GH_TOKEN" | gh auth login --with-token
-fi
+# if [ -n "$GH_TOKEN" ]; then
+#   echo "$GH_TOKEN" | gh auth login --with-token
+# fi
 
 echo "Container is ready and running!"
 

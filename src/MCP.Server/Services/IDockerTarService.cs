@@ -2,5 +2,5 @@
 
 public interface IDockerTarService
 {
-    string CreateDockerTar(string dockerfilePath, string dockerTarFileName, string dockerfileName);
+    string CreateDockerTar(string dockerFilePath, string dockerTarFileName, string dockerfileName, params string[] additionalFilePaths);
 }

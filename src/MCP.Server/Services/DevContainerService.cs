@@ -38,13 +38,15 @@ public class DevContainerService(
             return OperationResult<string>.Failure("Git user name and email are required.");
         }
 
-        var path = Path.Combine(_settings.DataDirectory, _settings.DevContainerImageName);
-        if (!File.Exists(path))
+        var dockerFilePath = Path.Combine(_settings.DataDirectory, _settings.DevContainerImageName);
+        if (!File.Exists(dockerFilePath))
         {
             return OperationResult<string>.Failure("File not found!");
         }
 
-        var dockerfilePath = dockerTarService.CreateDockerTar(path, DOCKER_TAR_FILE_NAME, DOCKER_FILE_NAME);
+        var entrypointFilePath = Path.Combine(_settings.DataDirectory, "entrypoint.sh");
+
+        var dockerfilePath = dockerTarService.CreateDockerTar(dockerFilePath, DOCKER_TAR_FILE_NAME, DOCKER_FILE_NAME, entrypointFilePath);
         var imageToUse = IMAGE_BASE_NAME + _settings.DevContainerImageName;
         var containerName = CreateContainerName();
         using var client = CreateDockerClient();
@@ -64,10 +66,10 @@ public class DevContainerService(
         };
 
         var hostConfig = new HostConfig();
-        //if (_settings.VolumeBinds is not null && _settings.VolumeBinds.Count > 0)
-        //{
-        //    hostConfig.Binds = _settings.VolumeBinds.ToList();
-        //}
+        if (_settings.VolumeBinds is not null && _settings.VolumeBinds.Count > 0)
+        {
+           hostConfig.Binds = _settings.VolumeBinds.ToList();
+        }
 
         var response = await client.Containers.CreateContainerAsync(new CreateContainerParameters
         {
