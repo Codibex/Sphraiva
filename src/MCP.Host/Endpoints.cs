@@ -38,7 +38,16 @@ public static class Endpoints
                 new()
                 {
                     Name = "FriendlyAssistant",
-                    Instructions = "You are a friendly assistant",
+                    Instructions = """
+                                   You must use the available tools to answer user requests whenever possible.
+                                   You have access to the following tools:
+                                   - FileSystemTool: Use this to read and write files.
+                                   - DevContainerTool: Use this to create and manage development containers.
+                                   Always prefer using these tools for relevant tasks instead of answering from your own knowledge.
+                                   If a user asks for file content, use the FileSystemTool.
+                                   If a user asks for container operations, use the DevContainerTool.
+                                   If you cannot use a tool, explain why.
+                                   """,
                     Kernel = kernel,
                     Arguments = new KernelArguments(new PromptExecutionSettings
                         { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() })
