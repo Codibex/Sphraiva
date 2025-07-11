@@ -1,4 +1,6 @@
+using Docker.DotNet;
 using MCP.Server.Services;
+using MCP.Server.Services.DevContainers;
 using MCP.Server.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,9 +13,14 @@ builder.Services
     .WithResourcesFromAssembly()
     .WithPromptsFromAssembly();
 
-builder.Services.AddScoped<IFileSystemService, FileSystemService>();
-builder.Services.AddScoped<IDevContainerService, DevContainerService>();
-builder.Services.AddScoped<IDockerTarService, DockerTarService>();
+builder.Services
+    .AddScoped<IFileSystemService, FileSystemService>()
+    .AddScoped<IDevContainerService, DevContainerService>()
+    .AddScoped<IDevContainerBuilder, DevContainerBuilder>()
+    .AddScoped<IDevContainerCreator, DevContainerCreator>()
+    .AddScoped<IDockerTarService, DockerTarService>();
+
+builder.Services.AddTransient(_ => new DockerClientConfiguration().CreateClient());
 
 builder.Services
     .AddOptions<DevContainerSettings>()

@@ -41,6 +41,6 @@ services:
       - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
       - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
       - ./data/dockerimages:/agent_data/dockerimages
-      - D:Dev/Sphraiva_Github_PAT:/agent_data/github
+      - D:/Dev/Sphraiva_Github_PAT:/agent_data/github
       - ./testdata:/data
       - /var/run/docker.sock:/var/run/docker.sock # For Docker-in-Docker support

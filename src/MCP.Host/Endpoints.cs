@@ -6,13 +6,13 @@ namespace MCP.Host;
 
 public static class Endpoints
 {
-    private static ChatHistoryAgentThread _agentThread = new ChatHistoryAgentThread();
+    private static readonly ChatHistoryAgentThread _agentThread = new();
 
     public static void MapEndpoints(this WebApplication app)
     {
         app.MapPost("/chat", (async (ChatRequest request, Kernel kernel) =>
         {
-            OllamaPromptExecutionSettings settings = new OllamaPromptExecutionSettings()
+            var settings = new OllamaPromptExecutionSettings
             {
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
                 Temperature = 0

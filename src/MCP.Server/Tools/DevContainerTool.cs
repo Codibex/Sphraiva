@@ -1,6 +1,6 @@
 ﻿using ModelContextProtocol.Server;
-using MCP.Server.Services;
 using System.ComponentModel;
+using MCP.Server.Services.DevContainers;
 
 namespace MCP.Server.Tools;
 
@@ -25,13 +25,16 @@ public class DevContainerTool(IDevContainerService devContainerService)
         """
     )]
     public async Task<CreateDevContainerResult> CreateDevContainerAsync(
-        [Description("The Git user name to configure in the container")]
-        string gitUserName,
-        [Description("The Git user email to configure in the container")]
-        string gitUserEmail
+        [Description(
+            """
+            The instruction keyword used to select the Docker image configuration. 
+            For example, 'net9' requests a .NET 9 development container. 
+            """
+        )]
+        string instructionName
     )
     {
-        var result = await devContainerService.CreateDevContainerAsync(new GitConfig(gitUserName, gitUserEmail));
+        var result = await devContainerService.CreateDevContainerAsync(instructionName);
         return result.IsSuccess
             ? CreateDevContainerResult.SuccessResult(result.Data)
             : CreateDevContainerResult.FailureResult(result.ErrorMessage!);
