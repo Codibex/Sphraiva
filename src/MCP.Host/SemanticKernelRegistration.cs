@@ -8,7 +8,7 @@ public static class SemanticKernelRegistration
 {
     public static void AddSemanticKernel(this IServiceCollection services)
     {
-        var ollamaClient = new OllamaApiClient(@"http://sphraiva-ollama:11434", "mistral");
+        var ollamaClient = new OllamaApiClient("http://sphraiva-ollama:11434", "devstral");
         var kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder
             .AddOllamaChatClient(ollamaClient)

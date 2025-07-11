@@ -10,7 +10,7 @@ public static class Endpoints
 
     public static void MapEndpoints(this WebApplication app)
     {
-        app.MapPost("/chat", (async (ChatRequest request, Kernel kernel) =>
+        app.MapPost("/chat", (async (ChatRequest request, Kernel kernel, CancellationToken cancellationToken) =>
         {
             var settings = new OllamaPromptExecutionSettings
             {
@@ -25,14 +25,14 @@ public static class Endpoints
             //    });
             //}
 
-            var result = await kernel.InvokePromptAsync(request.Message, new KernelArguments(settings));
+            var result = await kernel.InvokePromptAsync(request.Message, new KernelArguments(settings), cancellationToken: cancellationToken);
 
             var value = result.GetValue<string>();
 
             return Results.Ok(value);
         }));
 
-        app.MapPost("/agent", (async (ChatRequest request, Kernel kernel) =>
+        app.MapPost("/agent", (async (ChatRequest request, Kernel kernel, CancellationToken cancellationToken) =>
         {
             ChatCompletionAgent agent =
                 new()
@@ -47,7 +47,7 @@ public static class Endpoints
                         { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() })
                 };
 
-            ChatMessageContent response = await agent.InvokeAsync(request.Message, _agentThread).FirstAsync();
+            ChatMessageContent response = await agent.InvokeAsync(request.Message, _agentThread, cancellationToken: cancellationToken).FirstAsync();
 
             return Results.Ok(response.Content);
 

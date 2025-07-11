@@ -13,6 +13,9 @@
             <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2" />
         }
     </MudButton>
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Abort" Disabled="!_isLoading" Class="mt-2">
+        Abort
+    </MudButton>
     <MudDivider Class="my-4" />
     <MudText Typo="Typo.subtitle2" GutterBottom="true">Response:</MudText>
     <MudPaper Class="pa-2" Elevation="1" Style="min-height:60px;">
@@ -34,6 +37,8 @@
     private bool _isLoading;
     private string? _result;
 
+    private CancellationTokenSource? _cancellationTokenSource;
+
     [Inject] public required IMcpService McpService { get; set; }
 
     private async Task Send()  
@@ -41,7 +46,8 @@
         try
         {
             _isLoading = true;
-            _result = await McpService.AgentAsync(_inputText);
+            _cancellationTokenSource = new CancellationTokenSource();
+            _result = await McpService.AgentAsync(_inputText, _cancellationTokenSource.Token);
         }
         catch (Exception e)
         {
@@ -52,7 +58,12 @@
         {
             _isLoading = false;
         }
-    }  
+    } 
+
+    private void Abort()
+    {
+        _cancellationTokenSource?.Cancel();
+    }
 
     private string FormatResult(string? result)
     {
