@@ -64,10 +64,10 @@ public class DevContainerService(
         };
 
         var hostConfig = new HostConfig();
-        if (_settings.VolumeBinds is not null && _settings.VolumeBinds.Count > 0)
-        {
-            hostConfig.Binds = _settings.VolumeBinds.ToList();
-        }
+        //if (_settings.VolumeBinds is not null && _settings.VolumeBinds.Count > 0)
+        //{
+        //    hostConfig.Binds = _settings.VolumeBinds.ToList();
+        //}
 
         var response = await client.Containers.CreateContainerAsync(new CreateContainerParameters
         {
@@ -106,7 +106,11 @@ public class DevContainerService(
     {
         await using var fs = File.OpenRead(dockerfilePath);
 
-        var buildParams = new ImageBuildParameters { Dockerfile = DOCKER_FILE_NAME, Tags = [imageTag] };
+        var buildParams = new ImageBuildParameters
+        {
+            Dockerfile = DOCKER_FILE_NAME,
+            Tags = [$"{imageTag}:latest"]
+        };
         await client.Images.BuildImageFromDockerfileAsync(
             buildParams,
             fs,
