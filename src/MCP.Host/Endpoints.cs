@@ -43,8 +43,11 @@ public static class Endpoints
                                    Use the available tools to answer user requests.
                                    """,
                     Kernel = kernel,
-                    Arguments = new KernelArguments(new PromptExecutionSettings
-                        { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() })
+                    Arguments = new KernelArguments(
+                        new PromptExecutionSettings
+                        {
+                            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
+                        })
                 };
 
             ChatMessageContent response = await agent.InvokeAsync(request.Message, _agentThread, cancellationToken: cancellationToken).FirstAsync();
