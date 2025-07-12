@@ -4,33 +4,24 @@
 
 <MudPaper Class="ma-4 pa-4 mx-auto main-content d-flex flex-column" MaxWidth="500px" Elevation="4">
     <MudText Typo="Typo.h5" GutterBottom="true">Chat</MudText>
-    <MudPaper Class="pa-2 mb-4 chat" Elevation="1">
+    <div class="pa-2 mb-4 chat">
         @foreach (var msg in _messages)
         {
-            if (msg.IsUser)
-            {
-                <MudChat ChatPosition="ChatBubblePosition.End" Variant="Variant.Outlined" Color="Color.Secondary">
-                    <MudChatHeader Time="@(msg.GetTimeString())">@msg.User</MudChatHeader>
-                    <MudChatBubble>@msg.Text</MudChatBubble>
-                </MudChat>
-            }
-            else
-            {
-                <MudChat ChatPosition="ChatBubblePosition.Start" Variant="Variant.Outlined" Color="Color.Primary">
-                    <MudChatHeader Time="@msg.GetTimeString()">@msg.User</MudChatHeader>
-                    <MudChatBubble>@msg.Text</MudChatBubble>
-                </MudChat>
-            }
+            <MudChat ChatPosition="@(msg.IsUser ? ChatBubblePosition.End : ChatBubblePosition.Start)" 
+                     Variant="Variant.Outlined" 
+                     Color="@(msg.IsUser ? Color.Secondary : Color.Primary)">
+                <MudChatHeader Time="@(msg.GetTimeString())">@msg.User</MudChatHeader>
+                <MudChatBubble>@((MarkupString)EscapeForHtml(msg.Text))</MudChatBubble>
+            </MudChat>
         }
-
-    </MudPaper>
+    </div>
     <div>
         <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true" Immediate="true" />
         <MudText>@_errorMessage</MudText>
         
-        <div class="d-flex">
+        <div class="d-flex pb-4">
             <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading || string.IsNullOrWhiteSpace(_inputText)" Class="mt-2">
-                Senden
+                Send
                 @if (_isLoading)
                 {
                     <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2" />
@@ -40,6 +31,7 @@
                 Abort
             </MudButton>
         </div>
+        <MudAlert Severity="Severity.Info">Each message is processed independently. There is no chat history or context between messages.</MudAlert>
     </div>
     
 </MudPaper>
@@ -82,6 +74,14 @@
     private void Abort()
     {
         _cancellationTokenSource?.Cancel();
+    }
+
+    private static string EscapeForHtml(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return string.Empty;
+        return text.Replace("\\\"", "\"")
+                         .Replace(@"\r\n", "<br />")
+                         .Replace("\\n", "<br />");
     }
 
     public record ChatMessage(string User, string Text, DateTime Timestamp, bool IsUser)
