@@ -12,8 +12,9 @@ services:
       context: .
       dockerfile: src/MCP.Host/Dockerfile
     environment:
-      - MCP_SERVER=http://sphraiva-ollama:11434
+      - OLLAMA_SERVER=http://sphraiva-ollama:11434
       - LLM_MODEL=devstral
+      - QDRANT_SERVER=http://sphraiva-qrdant:6333
 
   sphraiva-mcp-server:
     image: ${DOCKER_REGISTRY-}sphraiva-mcp-server
@@ -22,14 +23,12 @@ services:
       context: .
       dockerfile: src/MCP.Server/Dockerfile
 
-  ollama-model:
+  sphraiva-ollama-model:
     image: ${DOCKER_REGISTRY-}sphraiva-ollama-mcp-ollama
     container_name: sphraiva-ollama
     build:
       context: .
       dockerfile: src/Ollama/Dockerfile
-    ports:
-      - "20005:11434"
     volumes:
       - ollama-models:/root/.ollama
     environment:
@@ -44,5 +43,12 @@ services:
               count: all
               capabilities: [gpu]
 
+  sphraiva-qdrant:
+    image: qdrant/qdrant
+    container_name: sphraiva-qrdant
+    volumes:
+      - qrdant-data:/qrdant/data
+
 volumes:
   ollama-models:
+  qrdant-data:

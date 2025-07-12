@@ -34,6 +34,15 @@ public static class Endpoints
 
         app.MapPost("/agent", (async (ChatRequest request, Kernel kernel, CancellationToken cancellationToken) =>
         {
+            if (kernel.Plugins.TryGetFunction("Sphraiva", "read_file", out var func))
+            {
+                var foo = await func.InvokeAsync(new KernelArguments()
+                {
+                    ["file"] = "Recipe.md"
+                });
+                var x = foo?.ToString();
+            }
+
             ChatCompletionAgent agent =
                 new()
                 {

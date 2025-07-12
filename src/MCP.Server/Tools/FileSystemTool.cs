@@ -1,4 +1,6 @@
+using MCP.Server.Common;
 using MCP.Server.Services;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 
@@ -22,15 +24,13 @@ public class FileSystemTool(IFileSystemService fileSystemService)
         - "Fetch the contents of Recipe.md."
         """
     )]
-    public async Task<ReadFileResult> ReadFile(
+    public async Task<CallToolResult> ReadFile(
         [Description("Relative path to the server's data directory (e.g., 'example.txt')")]
         string file
     )
     {
         var result = await fileSystemService.ReadFileAsync(file);
-        return result.IsSuccess 
-            ? ReadFileResult.SuccessResult(result.Data) 
-            : ReadFileResult.FailureResult(result.ErrorMessage!);
+        return result.ToCallToolResult();
     }
 
     [McpServerTool(Title = "Write file", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
@@ -43,7 +43,7 @@ public class FileSystemTool(IFileSystemService fileSystemService)
         - "Create a file named Recipe.md with this content: ... "
         """
     )]
-    public async Task<WriteFileResult> WriteFile(
+    public async Task<CallToolResult> WriteFile(
         [Description("Relative path to the server's data directory (e.g., 'example.txt')")]
         string file,
         [Description("The text to write to the file")]
@@ -51,9 +51,7 @@ public class FileSystemTool(IFileSystemService fileSystemService)
     )
     {
         var result = await fileSystemService.WriteFileAsync(file, content);
-        return result.IsSuccess
-            ? WriteFileResult.SuccessResult()
-            : WriteFileResult.FailureResult(result.ErrorMessage!);
+        return result.ToCallToolResult();
     }
 
     [McpServerTool(Title = "Delete file", Destructive = true, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
@@ -66,13 +64,13 @@ public class FileSystemTool(IFileSystemService fileSystemService)
         - "Erase Recipe.md from the data directory."
         """
     )]
-    public async Task<DeleteFileResponse> DeleteFile(
+    public async Task<CallToolResult> DeleteFile(
         [Description("Relative path to the file to delete (e.g., 'example.txt')")]
         string file
     )
     {
         var result = await fileSystemService.DeleteFileAsync(file);
-        return result.IsSuccess ? DeleteFileResponse.SuccessResult() : DeleteFileResponse.FailureResult(result.ErrorMessage!);
+        return result.ToCallToolResult();
     }
 
     [McpServerTool(Title = "List directory", Destructive = false, Idempotent = true, ReadOnly = true, UseStructuredContent = true)]
@@ -106,13 +104,13 @@ public class FileSystemTool(IFileSystemService fileSystemService)
         - "Add a directory 'backup'."
         """
     )]
-    public async Task<CreateDirectoryResponse> CreateDirectory(
+    public async Task<CallToolResult> CreateDirectory(
         [Description("Relative path for the new directory (e.g., 'newfolder')")]
         string directory
     )
     {
         var result = await fileSystemService.CreateDirectoryAsync(directory);
-        return result.IsSuccess ? CreateDirectoryResponse.SuccessResult() : CreateDirectoryResponse.FailureResult(result.ErrorMessage!);
+        return result.ToCallToolResult();
     }
 
     [McpServerTool(Title = "Delete directory", Destructive = true, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
@@ -125,13 +123,13 @@ public class FileSystemTool(IFileSystemService fileSystemService)
         - "Erase '2023' directory."
         """
     )]
-    public async Task<DeleteDirectoryResponse> DeleteDirectory(
+    public async Task<CallToolResult> DeleteDirectory(
         [Description("Relative path to the directory to delete (e.g., 'oldfolder')")]
         string directory
     )
     {
         var result = await fileSystemService.DeleteDirectoryAsync(directory);
-        return result.IsSuccess ? DeleteDirectoryResponse.SuccessResult() : DeleteDirectoryResponse.FailureResult(result.ErrorMessage!);
+        return result.ToCallToolResult();
     }
 
     [McpServerTool(Title = "Move file", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
@@ -144,7 +142,7 @@ public class FileSystemTool(IFileSystemService fileSystemService)
         - "Rename file 'old.txt' to 'new.txt'."
         """
     )]
-    public async Task<MoveFileResponse> MoveFile(
+    public async Task<CallToolResult> MoveFile(
         [Description("Relative path to the source file")]
         string sourceFile,
         [Description("Relative path for the destination file")]
@@ -152,7 +150,7 @@ public class FileSystemTool(IFileSystemService fileSystemService)
     )
     {
         var result = await fileSystemService.MoveFileAsync(sourceFile, destFile);
-        return result.IsSuccess ? MoveFileResponse.SuccessResult() : MoveFileResponse.FailureResult(result.ErrorMessage!);
+        return result.ToCallToolResult();
     }
 
     [McpServerTool(Title = "Copy file", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
@@ -165,7 +163,7 @@ public class FileSystemTool(IFileSystemService fileSystemService)
         - "Duplicate 'notes.txt' as 'notes_copy.txt'."
         """
     )]
-    public async Task<CopyFileResponse> CopyFile(
+    public async Task<CallToolResult> CopyFile(
         [Description("Relative path to the source file")]
         string sourceFile,
         [Description("Relative path for the destination file")]
@@ -173,7 +171,7 @@ public class FileSystemTool(IFileSystemService fileSystemService)
     )
     {
         var result = await fileSystemService.CopyFileAsync(sourceFile, destFile);
-        return result.IsSuccess ? CopyFileResponse.SuccessResult() : CopyFileResponse.FailureResult(result.ErrorMessage!);
+        return result.ToCallToolResult();
     }
 
     [McpServerTool(Title = "Statistic file or directory", Destructive = false, Idempotent = true, ReadOnly = true, UseStructuredContent = true)]
@@ -222,52 +220,10 @@ public record ResultBase<T>(bool IsError, T? Result, string? ErrorMessage)
 {
 };
 
-public record ReadFileResult(bool IsError, string? Content, string? ErrorMessage) : ResultBase<string?>(IsError, Content, ErrorMessage)
-{
-    public static ReadFileResult SuccessResult(string? content) => new(false, content, null);
-    public static ReadFileResult FailureResult(string errorMessage) => new(true, null, errorMessage);
-}
-
-public record WriteFileResult(bool IsError, string? ErrorMessage) : ResultBase<string>(IsError, null, ErrorMessage)
-{
-    public static WriteFileResult SuccessResult() => new(false, null);
-    public static WriteFileResult FailureResult(string errorMessage) => new(true, errorMessage);
-}
-
-public record DeleteFileResponse(bool IsError, string? ErrorMessage) : ResultBase<string>(IsError, null, ErrorMessage)
-{
-    public static DeleteFileResponse SuccessResult() => new(false, null);
-    public static DeleteFileResponse FailureResult(string errorMessage) => new(true, errorMessage);
-}
-
 public record ListDirectoryResponse(bool IsError, IEnumerable<string>? Directories, IEnumerable<string>? Files, string? ErrorMessage) : ResultBase<(IEnumerable<string>? Directories, IEnumerable<string>? Files)?>(IsError, (Directories, Files), ErrorMessage)
 {
     public static ListDirectoryResponse SuccessResult(IEnumerable<string>? directories, IEnumerable<string>? files) => new(false, directories, files, null);
     public static ListDirectoryResponse FailureResult(string errorMessage) => new(true, null, null, errorMessage);
-}
-
-public record CreateDirectoryResponse(bool IsError, string? ErrorMessage) : ResultBase<string>(IsError, null, ErrorMessage)
-{
-    public static CreateDirectoryResponse SuccessResult() => new(false, null);
-    public static CreateDirectoryResponse FailureResult(string errorMessage) => new(true, errorMessage);
-}
-
-public record DeleteDirectoryResponse(bool IsError, string? ErrorMessage) : ResultBase<string>(IsError, null, ErrorMessage)
-{
-    public static DeleteDirectoryResponse SuccessResult() => new(false, null);
-    public static DeleteDirectoryResponse FailureResult(string errorMessage) => new(true, errorMessage);
-}
-
-public record MoveFileResponse(bool IsError, string? ErrorMessage) : ResultBase<string>(IsError, null, ErrorMessage)
-{
-    public static MoveFileResponse SuccessResult() => new(false, null);
-    public static MoveFileResponse FailureResult(string errorMessage) => new(true, errorMessage);
-}
-
-public record CopyFileResponse(bool IsError, string? ErrorMessage) : ResultBase<string>(IsError, null, ErrorMessage)
-{
-    public static CopyFileResponse SuccessResult() => new(false, null);
-    public static CopyFileResponse FailureResult(string errorMessage) => new(true, errorMessage);
 }
 
 public record StatisticResponse(bool IsError, object? Data, string? ErrorMessage) : ResultBase<object?>(IsError, Data, ErrorMessage)

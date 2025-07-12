@@ -1,4 +1,5 @@
-﻿using Microsoft.SemanticKernel;
+﻿using MCP.Host.Data;
+using Microsoft.SemanticKernel;
 using ModelContextProtocol.Client;
 using OllamaSharp;
 
@@ -8,13 +9,14 @@ public static class SemanticKernelRegistration
 {
     public static void AddSemanticKernel(this IServiceCollection services, IConfiguration configuration)
     {
-        var ollamaClient = new OllamaApiClient(configuration["MCP_SERVER"]!, configuration["LLM_MODEL"]!);
+        var ollamaClient = new OllamaApiClient(configuration["OLLAMA_SERVER"]!, configuration["LLM_MODEL"]!);
         var kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder
             .AddOllamaChatClient(ollamaClient)
             .AddOllamaChatCompletion(ollamaClient)
             .AddOllamaTextGeneration(ollamaClient)
-            .AddOllamaEmbeddingGenerator(ollamaClient);
+            .AddOllamaEmbeddingGenerator(ollamaClient)
+            .AddVectorStoreTextSearch<Document>();
 
         var kernel = kernelBuilder.Build();
 
@@ -22,6 +24,7 @@ public static class SemanticKernelRegistration
 
         services.AddSingleton(kernel);
         services.AddSingleton(ollamaClient);
+        services.AddQdrantVectorStore(configuration["QDRANT_SERVER"]!);
     }
 
     private static async Task RegisterMcp(Kernel kernel)

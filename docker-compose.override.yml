@@ -44,3 +44,11 @@ services:
       - D:/Dev/Sphraiva_Github_PAT:/agent_data/github
       - ./testdata:/data
       - /var/run/docker.sock:/var/run/docker.sock # For Docker-in-Docker support
+
+  sphraiva-ollama-model:
+    ports:
+      - "20005:11434"
+
+  sphraiva-qdrant:
+    ports:
+      - "20006:6333"  
