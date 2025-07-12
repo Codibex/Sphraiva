@@ -59,6 +59,24 @@ public class DevContainerTool(IDevContainerService devContainerService)
             ? CleanupDevContainerResult.SuccessResult("Dev container removed")
             : CleanupDevContainerResult.FailureResult(result.ErrorMessage!);
     }
+
+    [McpServerTool(Title = "Run command in dev container", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
+    [Description(
+        """
+        Runs a shell command inside a Docker development container by name. Useful for operations like 'git clone', 'apt install', or custom scripts.
+        Returns the output of the command or an error message if the operation fails.
+        Sample phrases:
+        - "Run 'git clone https://github.com/example/repo.git' in dev container agent-dev-abc123."
+        - "Execute 'ls -la' in dev container agent-dev-xyz456."
+        """
+    )]
+    public async Task<RunCommandResult> RunCommandInDevContainerAsync(string containerName, string command, CancellationToken cancellationToken)
+    {
+        var result = await devContainerService.RunCommandInContainerAsync(containerName, command, cancellationToken);
+        return result.IsSuccess
+            ? RunCommandResult.SuccessResult(result.Data)
+            : RunCommandResult.FailureResult(result.ErrorMessage!);
+    }
 }
 
 public record CreateDevContainerResult(bool IsError, string? Content, string? ErrorMessage) : ResultBase<string?>(IsError, Content, ErrorMessage)
@@ -73,3 +91,8 @@ public record CleanupDevContainerResult(bool IsError, string? Content, string? E
     public static CleanupDevContainerResult FailureResult(string errorMessage) => new(true, null, errorMessage);
 }
 
+public record RunCommandResult(bool IsError, string? Content, string? ErrorMessage) : ResultBase<string?>(IsError, Content, ErrorMessage)
+{
+    public static RunCommandResult SuccessResult(string? content) => new(false, content, null);
+    public static RunCommandResult FailureResult(string errorMessage) => new(true, null, errorMessage);
+}
