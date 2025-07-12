@@ -6,9 +6,9 @@ namespace MCP.Host;
 
 public static class SemanticKernelRegistration
 {
-    public static void AddSemanticKernel(this IServiceCollection services)
+    public static void AddSemanticKernel(this IServiceCollection services, IConfiguration configuration)
     {
-        var ollamaClient = new OllamaApiClient("http://sphraiva-ollama:11434", "devstral");
+        var ollamaClient = new OllamaApiClient(configuration["MCP_SERVER"]!, configuration["LLM_MODEL"]!);
         var kernelBuilder = Kernel.CreateBuilder();
         kernelBuilder
             .AddOllamaChatClient(ollamaClient)
