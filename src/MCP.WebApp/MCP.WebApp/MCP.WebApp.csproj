@@ -6,5 +6,4 @@
     <ProjectReference Include="..\MCP.WebApp.Client\MCP.WebApp.Client.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
   </ItemGroup>
-
 </Project>

@@ -5,7 +5,8 @@
 
 <MudPaper Class="pa-4 mx-auto" MaxWidth="500px" Elevation="4">
     <MudText Typo="Typo.h5" GutterBottom="true">Chat</MudText>
-    <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true"/>
+    <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true"
+                  @onkeydown="HandleInputKeyDown" />
     <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading" Class="mt-2">
         Send
         @if (_isLoading)
@@ -68,5 +69,18 @@
     private string FormatResult(string? result)
     {
         return result?.Replace(@"\r\n", "<br />").Replace(@"\n", "<br />") ?? "No response";
+    }
+
+    private async Task HandleInputKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Enter" when e.ShiftKey:
+                _inputText += "\r\n";
+                break;
+            case "Enter" when !e.ShiftKey:
+                await Send();
+                break;
+        }
     }
 }

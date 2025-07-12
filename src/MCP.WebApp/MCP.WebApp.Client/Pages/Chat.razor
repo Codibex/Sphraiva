@@ -1,72 +1,94 @@
-﻿@page "/chat"  
+﻿@page "/chat"
 
+<PageTitle>Chat</PageTitle>
 
-<PageTitle>Chat</PageTitle>  
-
-<MudPaper Class="pa-4 mx-auto" MaxWidth="500px" Elevation="4">
+<MudPaper Class="ma-4 pa-4 mx-auto main-content d-flex flex-column" MaxWidth="500px" Elevation="4">
     <MudText Typo="Typo.h5" GutterBottom="true">Chat</MudText>
-    <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true"/>
-    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading" Class="mt-2">
-        Send
-        @if (_isLoading)
+    <MudPaper Class="pa-2 mb-4 chat" Elevation="1">
+        @foreach (var msg in _messages)
         {
-            <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2" />
+            if (msg.IsUser)
+            {
+                <MudChat ChatPosition="ChatBubblePosition.End" Variant="Variant.Outlined" Color="Color.Secondary">
+                    <MudChatHeader Time="@(msg.GetTimeString())">@msg.User</MudChatHeader>
+                    <MudChatBubble>@msg.Text</MudChatBubble>
+                </MudChat>
+            }
+            else
+            {
+                <MudChat ChatPosition="ChatBubblePosition.Start" Variant="Variant.Outlined" Color="Color.Primary">
+                    <MudChatHeader Time="@msg.GetTimeString()">@msg.User</MudChatHeader>
+                    <MudChatBubble>@msg.Text</MudChatBubble>
+                </MudChat>
+            }
         }
-    </MudButton>
-    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Abort" Disabled="!_isLoading" Class="mt-2">
-        Abort
-    </MudButton>
-    <MudDivider Class="my-4" />
-    <MudText Typo="Typo.subtitle2" GutterBottom="true">Response:</MudText>
-    <MudPaper Class="pa-2" Elevation="1" Style="min-height:60px;">
-        @if (_isLoading)
-        {
-            <MudText Color="Color.Info"><em>Loading...</em></MudText>
-        }
-        else
-        {
-            <MudText>
-                @((MarkupString)FormatResult(_result))
-            </MudText>
-        }
+
     </MudPaper>
+    <div>
+        <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true" Immediate="true" />
+        <MudText>@_errorMessage</MudText>
+        
+        <div class="d-flex">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading || string.IsNullOrWhiteSpace(_inputText)" Class="mt-2">
+                Senden
+                @if (_isLoading)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2" />
+                }
+            </MudButton>
+            <MudButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="Abort" Disabled="!_isLoading" Class="mt-2 ml-2">
+                Abort
+            </MudButton>
+        </div>
+    </div>
+    
 </MudPaper>
 
-@code {  
+@code {
     private string _inputText = string.Empty;
     private bool _isLoading;
-    private string? _result;
-
     private CancellationTokenSource? _cancellationTokenSource;
+    private readonly List<ChatMessage> _messages = [];
+    private string _errorMessage = string.Empty;
 
     [Inject] public required IMcpService McpService { get; set; }
 
-    private async Task Send()  
+    private async Task Send()
     {
+        if (string.IsNullOrWhiteSpace(_inputText))
+        {
+            return;
+        }
+        _isLoading = true;
+        _cancellationTokenSource = new CancellationTokenSource();
+        _messages.Add(ChatMessage.CreateUserMessage(_inputText));
+        var input = _inputText;
+        _inputText = string.Empty;
         try
         {
-            _isLoading = true;
-            _cancellationTokenSource = new CancellationTokenSource();
-            _result = await McpService.ChatAsync(_inputText, _cancellationTokenSource.Token);
+            var response = await McpService.ChatAsync(input, _cancellationTokenSource.Token);
+            _messages.Add(ChatMessage.CreateAgentMessage(response));
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            throw;
+            _errorMessage = e.Message;
         }
         finally
         {
             _isLoading = false;
         }
-    }  
+    }
 
     private void Abort()
     {
         _cancellationTokenSource?.Cancel();
     }
 
-    private string FormatResult(string? result)
+    public record ChatMessage(string User, string Text, DateTime Timestamp, bool IsUser)
     {
-        return result?.Replace(@"\r\n", "<br />").Replace(@"\n", "<br />") ?? "No response";
+        public static ChatMessage CreateUserMessage(string text) => new ChatMessage("User", text, DateTime.Now, true);
+        public static ChatMessage CreateAgentMessage(string text) => new ChatMessage("Agent", text, DateTime.Now, false);
+
+        public string GetTimeString() => Timestamp.ToShortTimeString();
     }
 }
