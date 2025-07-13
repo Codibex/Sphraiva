@@ -64,7 +64,7 @@ public class FileSystemService : IFileSystemService
         var path = Path.Combine(_dataDirectory, relativePath);
         if (Directory.Exists(path))
         {
-            return "Directory already exists!";
+            throw new Exception($"Directory already exists: {relativePath}");
         }
         Directory.CreateDirectory(path);
         return $"Directory created successfully: {relativePath}";

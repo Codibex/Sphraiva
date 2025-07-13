@@ -1,6 +1,5 @@
 ﻿using Docker.DotNet;
 using Docker.DotNet.Models;
-using MCP.Server.Common;
 using MCP.Server.Settings;
 using Microsoft.Extensions.Options;
 
@@ -14,17 +13,17 @@ public class DevContainerService(
 {
     private readonly DevContainerSettings _settings = options.Value;
 
-    public async Task<OperationResult<string>> CreateDevContainerAsync(string instructionName)
+    public async Task<string> CreateDevContainerAsync(string instructionName)
     {
         if (string.IsNullOrWhiteSpace(instructionName))
         {
-            return OperationResult<string>.Failure("Instruction name cannot be empty.");
+            throw new ArgumentException("Instruction name cannot be null or empty.", nameof(instructionName));
         }
 
         var dockerImage = _settings.GetImageByInstructionName(instructionName);
         if (dockerImage == null)
         {
-            return OperationResult<string>.Failure($"No Docker image found for instruction '{instructionName}'.");
+            throw new NullReferenceException("Docker image not found.");
         }
 
         var images = await dockerClient.Images.ListImagesAsync(new ImagesListParameters { All = true });
@@ -39,16 +38,16 @@ public class DevContainerService(
 
         var started = await dockerClient.Containers.StartContainerAsync(result.Id, null);
         return started
-            ? OperationResult<string>.Success(result.ContainerName)
-            : OperationResult<string>.Failure($"Failed to start container {result.ContainerName}.");
+            ? $"Started container successfully: {result.ContainerName}"
+            : $"Failed to start container: {result.ContainerName}.";
     }
 
-    public async Task<OperationResult> CleanupDevContainerAsync(string containerName)
+    public async Task<string> CleanupDevContainerAsync(string containerName)
     {
         var container = await FindContainer(containerName);
         if (container == null)
         {
-            return OperationResult.Success();
+            return $"Container not found: {containerName}";
         }
         if (container.State == "running")
         {
@@ -56,15 +55,15 @@ public class DevContainerService(
         }
         await dockerClient.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters { Force = true });
 
-        return OperationResult.Success();
+        return $"Successfully stopped container: {containerName}";
     }
 
-    public async Task<OperationResult<string>> RunCommandInContainerAsync(string containerName, string command, CancellationToken cancellationToken)
+    public async Task<string> RunCommandInContainerAsync(string containerName, string command, CancellationToken cancellationToken)
     {
         var container = await FindContainer(containerName);
         if (container == null)
         {
-            return OperationResult<string>.Failure($"Container '{containerName}' not found.");
+            return $"Container not found: {containerName}";
         }
 
         container.Command = command;
@@ -81,7 +80,7 @@ public class DevContainerService(
 
         var output = await stream.ReadOutputToEndAsync(cancellationToken);
 
-        return OperationResult<string>.Success(output.stdout!);
+        return output.stdout!;
     }
 
     private async Task<ContainerListResponse?> FindContainer(string containerName)

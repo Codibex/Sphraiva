@@ -22,7 +22,7 @@ public class DevContainerTool(IDevContainerService devContainerService)
         - "Provision a fresh agent-dev container."
         """
     )]
-    public async Task<CreateDevContainerResult> CreateDevContainerAsync(
+    public async Task<string> CreateDevContainerAsync(
         [Description(
             """
             The instruction keyword used to select the Docker image configuration. 
@@ -30,13 +30,7 @@ public class DevContainerTool(IDevContainerService devContainerService)
             """
         )]
         string instructionName
-    )
-    {
-        var result = await devContainerService.CreateDevContainerAsync(instructionName);
-        return result.IsSuccess
-            ? CreateDevContainerResult.SuccessResult(result.Data)
-            : CreateDevContainerResult.FailureResult(result.ErrorMessage!);
-    }
+    ) => await devContainerService.CreateDevContainerAsync(instructionName);
 
     [McpServerTool(Title = "Cleanup dev container", Destructive = true, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
     [Description(
@@ -49,16 +43,10 @@ public class DevContainerTool(IDevContainerService devContainerService)
         - "Cleanup agent-dev container by name."
         """
     )]
-    public async Task<CleanupDevContainerResult> CleanupDevContainerAsync(
+    public async Task<string> CleanupDevContainerAsync(
         [Description("The name of the container to remove (must be a valid agent-dev container name)")]
         string containerName
-    )
-    {
-        var result = await devContainerService.CleanupDevContainerAsync(containerName);
-        return result.IsSuccess
-            ? CleanupDevContainerResult.SuccessResult("Dev container removed")
-            : CleanupDevContainerResult.FailureResult(result.ErrorMessage!);
-    }
+    ) => await devContainerService.CleanupDevContainerAsync(containerName);
 
     [McpServerTool(Title = "Run command in dev container", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
     [Description(
@@ -70,29 +58,11 @@ public class DevContainerTool(IDevContainerService devContainerService)
         - "Execute 'ls -la' in dev container agent-dev-xyz456."
         """
     )]
-    public async Task<RunCommandResult> RunCommandInDevContainerAsync(string containerName, string command, CancellationToken cancellationToken)
-    {
-        var result = await devContainerService.RunCommandInContainerAsync(containerName, command, cancellationToken);
-        return result.IsSuccess
-            ? RunCommandResult.SuccessResult(result.Data)
-            : RunCommandResult.FailureResult(result.ErrorMessage!);
-    }
-}
-
-public record CreateDevContainerResult(bool IsError, string? Content, string? ErrorMessage) : ResultBase<string?>(IsError, Content, ErrorMessage)
-{
-    public static CreateDevContainerResult SuccessResult(string? content) => new(false, content, null);
-    public static CreateDevContainerResult FailureResult(string errorMessage) => new(true, null, errorMessage);
-}
-
-public record CleanupDevContainerResult(bool IsError, string? Content, string? ErrorMessage) : ResultBase<string?>(IsError, Content, ErrorMessage)
-{
-    public static CleanupDevContainerResult SuccessResult(string? content) => new(false, content, null);
-    public static CleanupDevContainerResult FailureResult(string errorMessage) => new(true, null, errorMessage);
-}
-
-public record RunCommandResult(bool IsError, string? Content, string? ErrorMessage) : ResultBase<string?>(IsError, Content, ErrorMessage)
-{
-    public static RunCommandResult SuccessResult(string? content) => new(false, content, null);
-    public static RunCommandResult FailureResult(string errorMessage) => new(true, null, errorMessage);
+    public async Task<string> RunCommandInDevContainerAsync(
+        [Description("The name of the container to remove (must be a valid agent-dev container name)")]
+        string containerName,
+        [Description("The command to be executed in the container shell.")]
+        string command, 
+        CancellationToken cancellationToken) 
+        => await devContainerService.RunCommandInContainerAsync(containerName, command, cancellationToken);
 }
