@@ -1,6 +1,6 @@
 namespace MCP.BackgroundWorker.FileSystem;
 
-public class Worker(ILogger<Worker> logger) : BackgroundService
+internal class Worker(ILogger<Worker> logger, DataUploader dataUploader) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -10,7 +10,25 @@ public class Worker(ILogger<Worker> logger) : BackgroundService
             {
                 logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
             }
+
+            await ReadFilesAsync();
             await Task.Delay(1000, stoppingToken);
+        }
+    }
+
+    private async Task ReadFilesAsync()
+    {
+        var path = "../data";
+        foreach (var file in Directory.EnumerateFiles(path))
+        {
+            if (!new FileInfo(file).Extension.Contains("md"))
+            {
+                continue;
+            }
+            var filePath = Path.Combine(path, file);
+            var markdown = MarkdownReader.ReadMarkdown(new FileStream(filePath, FileMode.Open), filePath);
+
+            await dataUploader.GenerateEmbeddingsAndUpload("documents", [markdown]);
         }
     }
 }

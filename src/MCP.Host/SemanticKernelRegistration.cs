@@ -24,7 +24,7 @@ public static class SemanticKernelRegistration
 
         services.AddSingleton(kernel);
         services.AddSingleton(ollamaClient);
-        services.AddQdrantVectorStore(configuration["QDRANT_SERVER"]!);
+        services.AddQdrantVectorStore(configuration["QDRANT_HOST"]!, int.Parse(configuration["QDRANT_PORT"]!), false);
     }
 
     private static async Task RegisterMcp(Kernel kernel)
