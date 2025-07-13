@@ -45,10 +45,18 @@ services:
       - ./testdata:/data
       - /var/run/docker.sock:/var/run/docker.sock # For Docker-in-Docker support
 
+  sphraiva-mcp-backgroundworker-filesystem:
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ./testdata:/data
+
   sphraiva-ollama-model:
     ports:
       - "20005:11434"
 
   sphraiva-qdrant:
     ports:
-      - "20006:6333"  
+      - "20006:6333"

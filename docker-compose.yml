@@ -23,6 +23,13 @@ services:
       context: .
       dockerfile: src/MCP.Server/Dockerfile
 
+  sphraiva-mcp-backgroundworker-filesystem:
+    image: ${DOCKER_REGISTRY-}sphraiva-mcp-backgroundworker-filesystem
+    container_name: sphraiva-mcp-backgroundworker-filesystem
+    build:
+      context: .
+      dockerfile: src/MCP.BackgroundWorker.FileSystem/Dockerfile
+
   sphraiva-ollama-model:
     image: ${DOCKER_REGISTRY-}sphraiva-ollama-mcp-ollama
     container_name: sphraiva-ollama
@@ -48,7 +55,8 @@ services:
     container_name: sphraiva-qrdant
     volumes:
       - qrdant-data:/qrdant/data
-
+      
 volumes:
   ollama-models:
   qrdant-data:
+
