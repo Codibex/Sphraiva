@@ -1,6 +1,6 @@
 using MCP.Server.Results;
 
-namespace MCP.Server.Services;
+namespace MCP.Server.Services.FileSystem;
 
 public class FileSystemService : IFileSystemService
 {

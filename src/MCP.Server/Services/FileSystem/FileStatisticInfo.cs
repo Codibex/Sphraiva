@@ -1,4 +1,4 @@
-namespace MCP.Server.Services;
+namespace MCP.Server.Services.FileSystem;
 
 public record FileStatisticInfo
 {
