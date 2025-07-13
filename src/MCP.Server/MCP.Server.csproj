@@ -15,4 +15,8 @@
     <PackageReference Include="SharpCompress" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Exceptions\" />
+  </ItemGroup>
+
 </Project>
