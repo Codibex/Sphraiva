@@ -1,13 +1,12 @@
-using Microsoft.Extensions.DependencyInjection;
 using MCP.Server.Services.DevContainers;
 using MCP.Server.Services.FileSystem;
 using Docker.DotNet;
 
 namespace MCP.Server.Services;
 
-public static class ServiceCollectionExtensions
+internal static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddDevContainerServices(this IServiceCollection services)
+    internal static IServiceCollection AddDevContainerServices(this IServiceCollection services)
     {
         services
             .AddScoped<IDevContainerService, DevContainerService>()
@@ -18,7 +17,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddFileSystemServices(this IServiceCollection services)
+    internal static IServiceCollection AddFileSystemServices(this IServiceCollection services)
     {
         services.AddScoped<IFileSystemService, FileSystemService>();
         return services;

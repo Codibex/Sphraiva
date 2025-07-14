@@ -1,4 +1,4 @@
-namespace MCP.BackgroundWorker.FileSystem;
+namespace MCP.BackgroundWorker.FileSystem.Services;
 
 internal class Worker(ILogger<Worker> logger, DataUploader dataUploader) : BackgroundService
 {
@@ -12,7 +12,7 @@ internal class Worker(ILogger<Worker> logger, DataUploader dataUploader) : Backg
             }
 
             await ReadFilesAsync();
-            await Task.Delay(1000, stoppingToken);
+            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
         }
     }
 

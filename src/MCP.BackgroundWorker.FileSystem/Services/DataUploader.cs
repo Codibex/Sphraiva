@@ -1,7 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.VectorData;
 
-namespace MCP.BackgroundWorker.FileSystem;
+namespace MCP.BackgroundWorker.FileSystem.Services;
 
 internal class DataUploader(VectorStore vectorStore, IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
 {
