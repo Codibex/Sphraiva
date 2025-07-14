@@ -13,7 +13,8 @@ builder.Services
 
 builder.Services
     .AddFileSystemServices()
-    .AddDevContainerServices();
+    .AddDevContainerServices()
+    .AddGitServices();
 
 builder.Services
     .AddOptions<DevContainerSettings>()
