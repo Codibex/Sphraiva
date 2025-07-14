@@ -23,7 +23,9 @@ public class GitDevContainerService(IDevContainerService devContainerService) : 
 
     public async Task<string> CommitChangesInDevContainerAsync(string containerName, string repository, string commitMessage, CancellationToken cancellationToken)
     {
-        var repoName = repository.Split('/')[1];
+        var repoName = repository.Contains('/')
+            ? repository[(repository.LastIndexOf('/') + 1)..]
+            : repository;
         var command = $"cd {repoName} && " + 
                       "git add . && " +
                       $"git commit -m \"{commitMessage.Replace("\"", "\\\"")}\"";
