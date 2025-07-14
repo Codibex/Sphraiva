@@ -63,10 +63,17 @@ public static class Endpoints
 #pragma warning restore SKEXP0130
 #pragma warning restore SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-            ChatMessageContent response = await agent.InvokeAsync(request.Message, _agentThread, cancellationToken: cancellationToken).FirstAsync();
-
-            return Results.Ok(response.Content);
-
+            var messages = new List<ChatMessageContent>();
+            await agent
+                .InvokeAsync(request.Message, _agentThread, cancellationToken: cancellationToken)
+                .AggregateAsync(messages, (current, response) =>
+                {
+                    current.Add(response.Message);
+                    return current;
+                }, cancellationToken: cancellationToken);
+            
+            var response = string.Join(Environment.NewLine, messages.Select(m => m.Content));
+            return Results.Ok(response);
             //return Results.Ok(new
             //{
             //    response.Content,
@@ -75,7 +82,5 @@ public static class Endpoints
         }));
     }
 }
-
-public record ReadFileParameters(string Path);
 
 public record ChatRequest(string Message);
