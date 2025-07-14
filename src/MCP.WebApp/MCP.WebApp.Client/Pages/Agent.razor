@@ -51,6 +51,7 @@
             return;
         }
         _isLoading = true;
+        _errorMessage = String.Empty;
         _cancellationTokenSource = new CancellationTokenSource();
         _messages.Add(ChatMessage.CreateUserMessage(_inputText));
         var input = _inputText;
