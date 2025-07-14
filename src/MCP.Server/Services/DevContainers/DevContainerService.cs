@@ -28,7 +28,7 @@ public class DevContainerService(
 
         var images = await dockerClient.Images.ListImagesAsync(new ImagesListParameters { All = true });
 
-        var imageExists = images.Any(img => img.RepoTags != null && img.RepoTags.Contains(dockerImage + ":latest"));
+        var imageExists = images.Any(img => img.RepoTags != null && img.RepoTags.Contains(dockerImage.ImageName + ":latest"));
         if (!imageExists)
         {
             await devContainerBuilder.BuildAsync(dockerImage);
