@@ -26,4 +26,20 @@
       ]
     }
     ```
-  
+  4. Configure the `appsettings` as follows in MCP.Server:
+    ```json
+    \"DevContainerSettings\": {
+      \"DataDirectory\": \"..//agent_data\",
+      \"GitUserName\": \"Agent Sphraiva\",
+      \"GitUserEmail\":  \"agent@sphraiva.at\",
+      \"GithubPatTokenFile\": \"Sphraiva_Github_PAT.txt\",
+      \"DockerImages\": [
+        {
+          \"InstructionName\": \"net9\", // Name is used as communication name for the tool
+          \"ImageName\": \"agent-dev-net9\", // Name of the image
+          \"Path\": \"net9\", // Folder containing all files for the docker image (DockerFile, (entrypoint.sh optionl, ...))
+          \"VolumeBinds\": [] // Volumes that should be bound to the docker agent
+        }
+      ]
+    }
+    ```  
