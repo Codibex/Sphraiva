@@ -55,7 +55,7 @@ public class GitDevContainerService(IDevContainerService devContainerService) : 
 
     private static string SanitizeInput(string input)
     {
-        return Regex.Replace(input, @"[^a-zA-Z0-9\-_\.]+", "");
+        return Regex.Replace(input, @"[^a-zA-Z0-9\-_/\.]+", "");
     }
 
     private static string SanitizeCommitMessage(string input)
