@@ -13,6 +13,12 @@ public interface IGitDevContainerService
         string branchName,
         CancellationToken cancellationToken);
 
+    Task<string> CommitChangesInDevContainerAsync(
+        string containerName,
+        string repository,
+        string commitMessage,
+        CancellationToken cancellationToken);
+
     Task<string> PushBranchInDevContainerAsync(
         string containerName,
         string repository,

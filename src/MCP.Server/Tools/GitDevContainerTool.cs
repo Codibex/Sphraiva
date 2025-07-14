@@ -54,6 +54,26 @@ public class GitDevContainerTool(IGitDevContainerService gitDevContainerService)
         CancellationToken cancellationToken)
         => await gitDevContainerService.CheckoutBranchInDevContainerAsync(containerName, repository, branchName, cancellationToken);
 
+    [McpServerTool(Title = "Commit changes in dev container", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
+    [Description(
+        """
+        Commits all staged changes in the specified repository inside a Docker development container.
+        Use this tool to commit changes by specifying the container name, repository, and commit message.
+        Returns the output of the operation or an error message if the command fails.
+        Example phrases:
+        - "Commit changes in dev container agent-dev-abc123 for repository 'Codibex/Sphraiva' with message 'Implement feature xyz'."
+        """
+    )]
+    public async Task<string> CommitChangesInDevContainerAsync(
+        [Description("The name of the Docker development container in which the git command should be executed (e.g. 'agent-dev-abc123').")]
+        string containerName,
+        [Description("The git repository to operate on (e.g. 'Codibex/Sphraiva').")]
+        string repository,
+        [Description("The commit message to use for the commit (e.g. 'Implement feature xyz').")]
+        string commitMessage,
+        CancellationToken cancellationToken)
+        => await gitDevContainerService.CommitChangesInDevContainerAsync(containerName, repository, commitMessage, cancellationToken);
+
     [McpServerTool(Title = "Push branch in dev container", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
     [Description(
         """

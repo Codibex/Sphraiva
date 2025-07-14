@@ -12,10 +12,6 @@ public class GitDevContainerService(IDevContainerService devContainerService) : 
 
     public async Task<string> CheckoutBranchInDevContainerAsync(string containerName, string repository, string branchName, CancellationToken cancellationToken)
     {
-        // Assumes repo is already cloned and working directory is set
-        // 1. Fetch latest main
-        // 2. Create branch from main
-        // 3. Checkout new branch
         var repoName = repository.Split('/')[1];
         var commands = $"cd {repoName} && " +
                        "git fetch origin main && " +
@@ -25,10 +21,17 @@ public class GitDevContainerService(IDevContainerService devContainerService) : 
         return await devContainerService.RunCommandInContainerAsync(containerName, commands, cancellationToken);
     }
 
+    public async Task<string> CommitChangesInDevContainerAsync(string containerName, string repository, string commitMessage, CancellationToken cancellationToken)
+    {
+        var repoName = repository.Split('/')[1];
+        var command = $"cd {repoName} && " + 
+                      "git add . && " +
+                      $"git commit -m \"{commitMessage.Replace("\"", "\\\"")}\"";
+        return await devContainerService.RunCommandInContainerAsync(containerName, command, cancellationToken);
+    }
+
     public async Task<string> PushBranchInDevContainerAsync(string containerName, string repository, string branchName, CancellationToken cancellationToken)
     {
-        // Assumes repo is already cloned and branch is checked out
-        // Pushes the branch to remote
         var repoName = repository.Split('/')[1];
         var command = $"cd {repoName} && git push -u origin {branchName}";
         return await devContainerService.RunCommandInContainerAsync(containerName, command, cancellationToken);
