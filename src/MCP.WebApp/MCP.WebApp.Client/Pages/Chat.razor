@@ -3,40 +3,41 @@
 
 <PageTitle>Chat</PageTitle>
 
-<MudPaper Class="ma-4 pa-4 mx-auto main-content d-flex flex-column" MaxWidth="500px" Elevation="4">
-    <MudText Typo="Typo.h5" GutterBottom="true">Chat</MudText>
-    <div class="pa-2 mb-4 chat">
-        @foreach (var msg in _messages)
-        {
-            <MudChat ChatPosition="@(msg.IsUser ? ChatBubblePosition.End : ChatBubblePosition.Start)" 
-                     Variant="Variant.Outlined" 
-                     Color="@(msg.IsUser ? Color.Secondary : Color.Primary)">
-                <MudChatHeader Time="@(msg.GetTimeString())">@msg.User</MudChatHeader>
-                <MudChatBubble>@((MarkupString)EscapeForHtml(msg.Text))</MudChatBubble>
-            </MudChat>
-        }
-    </div>
-    <div>
-        <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true" Immediate="true" />
-        <MudText>@_errorMessage</MudText>
-        
-        <div class="d-flex pb-4">
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading || string.IsNullOrWhiteSpace(_inputText)" Class="mt-2">
-                Send
-                @if (_isLoading)
-                {
-                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2" />
-                }
-            </MudButton>
-            <MudButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="Abort" Disabled="!_isLoading" Class="mt-2 ml-2">
-                Abort
-            </MudButton>
+<div class="main-content">
+    <MudPaper Class="ma-4 pa-4 mx-auto d-flex flex-column chat-container" MaxWidth="500px" Elevation="4">
+        <MudText Typo="Typo.h5" GutterBottom="true">Chat</MudText>
+        <MudPaper Class="pa-2 mb-4 chat" Elevation="1">
+            @foreach (var msg in _messages)
+            {
+                <MudChat ChatPosition="@(msg.IsUser ? ChatBubblePosition.End : ChatBubblePosition.Start)" 
+                         Variant="Variant.Outlined" 
+                         Color="@(msg.IsUser ? Color.Secondary : Color.Primary)">
+                    <MudChatHeader Time="@(msg.GetTimeString())">@msg.User</MudChatHeader>
+                    <MudChatBubble>@((MarkupString)EscapeForHtml(msg.Text))</MudChatBubble>
+                </MudChat>
+            }
+        </MudPaper>
+        <div>
+            <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true" Immediate="true" />
+            <MudText>@_errorMessage</MudText>
+            
+            <div class="d-flex pb-4">
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading || string.IsNullOrWhiteSpace(_inputText)" Class="mt-2">
+                    Send
+                    @if (_isLoading)
+                    {
+                        <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2" />
+                    }
+                </MudButton>
+                <MudButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="Abort" Disabled="!_isLoading" Class="mt-2 ml-2">
+                    Abort
+                </MudButton>
+            </div>
+            <MudAlert Severity="Severity.Info">Each message is processed independently. There is no chat history or context between messages.</MudAlert>
         </div>
-        <MudAlert Severity="Severity.Info">Each message is processed independently. There is no chat history or context between messages.</MudAlert>
-    </div>
-    
-</MudPaper>
-
+        
+    </MudPaper>
+</div>
 @code {
     private string _inputText = string.Empty;
     private bool _isLoading;

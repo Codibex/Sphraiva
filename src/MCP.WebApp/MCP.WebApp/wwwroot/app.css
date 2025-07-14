@@ -9,11 +9,16 @@ div.mud-main-content {
 }
 
 .main-container {
-    height: calc(100% - 2rem);
+    height: 100%;
+    padding: 2rem;
 }
 
 
 .main-content {
+    height: 100%;
+}
+
+.chat-container {
     height: 100%;
 }
 
