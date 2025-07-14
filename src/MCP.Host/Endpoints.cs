@@ -1,6 +1,8 @@
-﻿using Microsoft.SemanticKernel;
+﻿using MCP.Host.Data;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
+using Microsoft.SemanticKernel.Data;
 
 namespace MCP.Host;
 
@@ -23,6 +25,7 @@ public static class Endpoints
             //    {
             //        ["file"] = "Recipe.md"
             //    });
+            //    var x = foo?.ToString();
             //}
 
             var result = await kernel.InvokePromptAsync(request.Message, new KernelArguments(settings), cancellationToken: cancellationToken);
@@ -32,17 +35,10 @@ public static class Endpoints
             return Results.Ok(value);
         }));
 
-        app.MapPost("/agent", (async (ChatRequest request, Kernel kernel, CancellationToken cancellationToken) =>
+#pragma warning disable SKEXP0130
+        app.MapPost("/agent", (async (ChatRequest request, Kernel kernel, VectorStoreTextSearch<TextParagraph> textSearchStore, CancellationToken cancellationToken) =>
+#pragma warning restore SKEXP0130
         {
-            if (kernel.Plugins.TryGetFunction("Sphraiva", "read_file", out var func))
-            {
-                var foo = await func.InvokeAsync(new KernelArguments()
-                {
-                    ["file"] = "Recipe.md"
-                });
-                var x = foo?.ToString();
-            }
-
             ChatCompletionAgent agent =
                 new()
                 {
@@ -58,6 +54,11 @@ public static class Endpoints
                             FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
                         })
                 };
+#pragma warning disable SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+#pragma warning disable SKEXP0130
+            _agentThread.AIContextProviders.Add(new TextSearchProvider(textSearchStore));
+#pragma warning restore SKEXP0130
+#pragma warning restore SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
             ChatMessageContent response = await agent.InvokeAsync(request.Message, _agentThread, cancellationToken: cancellationToken).FirstAsync();
 

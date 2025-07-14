@@ -1,22 +1,25 @@
 ﻿using Microsoft.Extensions.VectorData;
 
 namespace MCP.Host.Data;
-
-public class Document
+internal class TextParagraph
 {
+    /// <summary>A unique key for the text paragraph.</summary>
     [VectorStoreKey]
-    public ulong DocumentId { get; set; }
+    public required Guid Key { get; init; }
 
-    public required string Title { get; set; }
+    /// <summary>A uri that points at the original location of the document containing the text.</summary>
+    [VectorStoreData]
+    public required string DocumentUri { get; init; }
 
-    [VectorStoreData(IsFullTextIndexed = true)]
-    public required string Content { get; set; }
+    /// <summary>The id of the paragraph from the document containing the text.</summary>
+    [VectorStoreData]
+    public required string ParagraphId { get; init; }
 
-    /// <summary>
-    /// Filename, URL
-    /// </summary>
-    public required string Source { get; set; }
+    /// <summary>The text of the paragraph.</summary>
+    [VectorStoreData]
+    public required string Text { get; init; }
 
-    [VectorStoreVector(Dimensions: 1024, DistanceFunction = DistanceFunction.CosineSimilarity, IndexKind = IndexKind.Hnsw)]
-    public ReadOnlyMemory<float>? Embedding { get; set; }
+    /// <summary>The embedding generated from the Text.</summary>
+    [VectorStoreVector(5120)]
+    public ReadOnlyMemory<float> TextEmbedding { get; set; }
 }
