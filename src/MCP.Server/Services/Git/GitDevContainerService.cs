@@ -16,19 +16,21 @@ public class GitDevContainerService(IDevContainerService devContainerService) : 
         // 1. Fetch latest main
         // 2. Create branch from main
         // 3. Checkout new branch
-        // 4. Push branch to remote
         var repoName = repository.Split('/')[1];
         var commands = $"cd {repoName} && " +
                        "git fetch origin main && " +
                        "git checkout main && " +
                        "git pull origin main && " +
-                       $"git checkout -b {branchName} &&";
-        //var commands = $"cd {repoName} && " +
-        //               "git fetch origin main && " +
-        //               "git checkout main && " +
-        //               "git pull origin main && " +
-        //               $"git checkout -b {branchName} && " +
-        //               $"git push -u origin {branchName}";
+                       $"git checkout -b {branchName}";
         return await devContainerService.RunCommandInContainerAsync(containerName, commands, cancellationToken);
+    }
+
+    public async Task<string> PushBranchInDevContainerAsync(string containerName, string repository, string branchName, CancellationToken cancellationToken)
+    {
+        // Assumes repo is already cloned and branch is checked out
+        // Pushes the branch to remote
+        var repoName = repository.Split('/')[1];
+        var command = $"cd {repoName} && git push -u origin {branchName}";
+        return await devContainerService.RunCommandInContainerAsync(containerName, command, cancellationToken);
     }
 }
