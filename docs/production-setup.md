@@ -8,7 +8,7 @@
    - `workflow` (optional, if you need to run workflows)
 3. Copy the token and store it securely in a file.
    - Folder containing the file must mapped into `/agent_data/dockerimages`
-4. Configure the `appsettings` as follows:
+4. Configure the `appsettings` in MCP.Server as follows:
 
     ```json
     "DevContainerSettings": {
@@ -25,5 +25,4 @@
         }
       ]
     }
-    ```
-  
+    ```  
