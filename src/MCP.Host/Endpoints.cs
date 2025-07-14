@@ -1,4 +1,6 @@
-﻿using MCP.Host.Data;
+﻿using System.Net.Mime;
+using MCP.Host.Contracts;
+using MCP.Host.Data;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -19,15 +21,7 @@ public static class Endpoints
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
                 Temperature = 0,
             };
-            //if (kernel.Plugins.TryGetFunction("Sphraiva", "read_file", out var func))
-            //{
-            //    var foo = await func.InvokeAsync(new KernelArguments()
-            //    {
-            //        ["file"] = "Recipe.md"
-            //    });
-            //    var x = foo?.ToString();
-            //}
-
+            
             var result = await kernel.InvokePromptAsync(request.Message, new KernelArguments(settings), cancellationToken: cancellationToken);
 
             var value = result.GetValue<string>();
@@ -35,10 +29,24 @@ public static class Endpoints
             return Results.Ok(value);
         }));
 
-#pragma warning disable SKEXP0130
-        app.MapPost("/agent", (async (ChatRequest request, Kernel kernel, VectorStoreTextSearch<TextParagraph> textSearchStore, CancellationToken cancellationToken) =>
-#pragma warning restore SKEXP0130
+        app.MapPost("/function-test", (async (Kernel kernel, CancellationToken cancellationToken) =>
         {
+            if (kernel.Plugins.TryGetFunction("Sphraiva", "read_file", out var func))
+            {
+                var result = await func.InvokeAsync(new KernelArguments
+                {
+                    ["file"] = "Recipe.md"
+                }, cancellationToken);
+                return Results.Ok(result?.ToString());
+            }
+
+            return Results.BadRequest("Function not callable");
+        }));
+
+        app.MapPost("/agent", (async (ChatRequest request, Kernel kernel, VectorStoreTextSearch<TextParagraph> textSearchStore, HttpResponse response, CancellationToken cancellationToken) =>
+        {
+            response.ContentType = MediaTypeNames.Text.EventStream;
+
             ChatCompletionAgent agent =
                 new()
                 {
@@ -49,7 +57,7 @@ public static class Endpoints
                                    """,
                     Kernel = kernel,
                     Arguments = new KernelArguments(
-                        new PromptExecutionSettings
+                        new OllamaPromptExecutionSettings
                         {
                             FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
                         })
@@ -63,17 +71,21 @@ public static class Endpoints
 #pragma warning restore SKEXP0130
 #pragma warning restore SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-            var messages = new List<ChatMessageContent>();
+            var messages = new List<StreamingChatMessageContent>();
             await agent
-                .InvokeAsync(request.Message, _agentThread, cancellationToken: cancellationToken)
-                .AggregateAsync(messages, (current, response) =>
+                .InvokeStreamingAsync(request.Message, _agentThread, cancellationToken: cancellationToken)
+                .AggregateAsync(messages, (current, responseItem) =>
                 {
-                    current.Add(response.Message);
+                    current.Add(responseItem.Message);
                     return current;
                 }, cancellationToken: cancellationToken);
             
-            var response = string.Join(Environment.NewLine, messages.Select(m => m.Content));
-            return Results.Ok(response);
+            await foreach (var result in agent.InvokeAsync(request.Message, _agentThread, cancellationToken: cancellationToken))
+            {
+                var content = result.Message.Content;
+                await response.WriteAsync(content ?? "No response", cancellationToken);
+                await response.Body.FlushAsync(cancellationToken);
+            }
             //return Results.Ok(new
             //{
             //    response.Content,
@@ -82,5 +94,3 @@ public static class Endpoints
         }));
     }
 }
-
-public record ChatRequest(string Message);

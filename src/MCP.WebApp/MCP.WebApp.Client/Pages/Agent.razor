@@ -1,4 +1,5 @@
 ﻿@page "/agent"
+@using MCP.WebApp.Client.Services
 
 <PageTitle>Agent</PageTitle>
 
@@ -58,8 +59,13 @@
         _inputText = string.Empty;
         try
         {
-            var response = await McpService.AgentAsync(input, _cancellationTokenSource.Token);
-            _messages.Add(ChatMessage.CreateAgentMessage(response));
+            var agentMsg = ChatMessage.CreateAgentMessage("");
+            _messages.Add(agentMsg);
+            await McpService.AgentStreamAsync(input, chunk =>
+            {
+                agentMsg.Text += chunk;
+                InvokeAsync(StateHasChanged);
+            }, _cancellationTokenSource.Token);
         }
         catch (Exception e)
         {
@@ -97,11 +103,16 @@
         }
     }
 
-    public record ChatMessage(string User, string Text, DateTime Timestamp, bool IsUser)
+    public class ChatMessage(string user, string text, DateTime timestamp, bool isUser)
     {
+        public string User { get; } = user;
+        public string Text { get; set; } = text;
+        public DateTime Timestamp { get; } = timestamp;
+        public bool IsUser { get; } = isUser;
+
         public static ChatMessage CreateUserMessage(string text) => new ChatMessage("User", text, DateTime.Now, true);
         public static ChatMessage CreateAgentMessage(string text) => new ChatMessage("Agent", text, DateTime.Now, false);
 
         public string GetTimeString() => Timestamp.ToShortTimeString();
     }
-}}
+}
