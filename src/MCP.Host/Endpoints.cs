@@ -56,7 +56,10 @@ public static class Endpoints
                 };
 #pragma warning disable SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 #pragma warning disable SKEXP0130
-            _agentThread.AIContextProviders.Add(new TextSearchProvider(textSearchStore));
+            if (_agentThread.AIContextProviders.Providers.Count == 0)
+            {
+                _agentThread.AIContextProviders.Add(new TextSearchProvider(textSearchStore));
+            }
 #pragma warning restore SKEXP0130
 #pragma warning restore SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 

@@ -28,7 +28,7 @@ internal class TextParagraph
     /// The id of the paragraph from the document containing the text.
     /// </summary>
     [VectorStoreData]
-    public required string ParagraphId { get; init; }
+    public required int ParagraphId { get; init; }
 
     /// <summary>
     /// The text of the paragraph.

@@ -1,20 +1,31 @@
-
 namespace MCP.BackgroundWorker.FileSystem;
 
 internal class MarkdownReader
 {
-    public static TextParagraph ReadMarkdown(Stream documentContents, string documentUri)
+    public static List<TextParagraph> ReadMarkdown(Stream documentContents, string documentUri)
     {
-        // Read the markdown file from the stream.
         using StreamReader reader = new(documentContents);
         var content = reader.ReadToEnd();
 
-        return new TextParagraph
+        var paragraphs = content.Split(["\r\n\r\n", "\n\n"], StringSplitOptions.RemoveEmptyEntries);
+        var result = new List<TextParagraph>();
+        int paragraphIndex = 0;
+        foreach (var paragraph in paragraphs)
         {
-            Text = content,
-            DocumentUri = documentUri,
-            Key = Guid.NewGuid(),
-            ParagraphId = Guid.NewGuid().ToString(),
-        };
+            var trimmed = paragraph.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                continue;
+            }
+            result.Add(new TextParagraph
+            {
+                Text = trimmed,
+                DocumentUri = documentUri,
+                Key = Guid.NewGuid(),
+                ParagraphId = paragraphIndex
+            });
+            paragraphIndex++;
+        }
+        return result;
     }
 }

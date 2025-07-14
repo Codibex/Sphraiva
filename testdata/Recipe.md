@@ -23,7 +23,7 @@ This classic Austrian dessert features a **delicate, flaky pastry** wrapped arou
 * 50g (1/2 cup) **breadcrumbs**
 * 50g (3.5 tbsp) **butter**, melted
 
-### For Brushing and Topping:
+### For Brushing and Topping
 
 * 50g (3.5 tbsp) **melted butter**
 * **Powdered sugar** for dusting

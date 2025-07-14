@@ -5,6 +5,14 @@ namespace MCP.BackgroundWorker.FileSystem;
 
 internal class DataUploader(VectorStore vectorStore, IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
 {
+    private enum ActionType
+    {
+        None,
+        Insert,
+        Update,
+        Delete
+    }
+
     public async Task GenerateEmbeddingsAndUpload(string collectionName, IEnumerable<TextParagraph> textParagraphs)
     {
         var collection = vectorStore.GetCollection<Guid, TextParagraph>(collectionName);
@@ -12,14 +20,20 @@ internal class DataUploader(VectorStore vectorStore, IEmbeddingGenerator<string,
 
         foreach (var paragraph in textParagraphs)
         {
-            var found = false;
-            await foreach (var _ in collection.GetAsync(p => p.DocumentUri == paragraph.DocumentUri, 1))
+            var actionType = ActionType.Insert;
+            await foreach (var foundParagraph in collection.GetAsync(p => p.DocumentUri == paragraph.DocumentUri && p.ParagraphId == paragraph.ParagraphId, 1))
             {
-                found = true;
+                if(!foundParagraph.Text.Equals(paragraph.Text))
+                {
+                    actionType = ActionType.Update;
+                    paragraph.TextEmbedding = foundParagraph.TextEmbedding;
+                    break;
+                }
+                actionType = ActionType.None;
                 break;
             }
 
-            if (found)
+            if (actionType == ActionType.None)
             {
                 continue;
             }

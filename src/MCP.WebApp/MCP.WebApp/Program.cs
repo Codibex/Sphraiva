@@ -15,6 +15,7 @@ builder.Services.AddScoped<IMcpService, McpService>();
 builder.Services.AddHttpClient<IMcpHttpClient, McpHttpClient>(options =>
 {
     options.BaseAddress = new Uri("http://sphraiva-mcp-host:8080/");
+    options.Timeout = TimeSpan.FromMinutes(6);
 });
 
 var app = builder.Build();

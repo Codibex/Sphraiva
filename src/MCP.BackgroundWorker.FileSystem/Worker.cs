@@ -25,10 +25,9 @@ internal class Worker(ILogger<Worker> logger, DataUploader dataUploader) : Backg
             {
                 continue;
             }
-            var filePath = Path.Combine(path, file);
-            var markdown = MarkdownReader.ReadMarkdown(new FileStream(filePath, FileMode.Open), filePath);
+            var markdown = MarkdownReader.ReadMarkdown(new FileStream(file, FileMode.Open), file);
 
-            await dataUploader.GenerateEmbeddingsAndUpload("documents", [markdown]);
+            await dataUploader.GenerateEmbeddingsAndUpload("documents", markdown);
         }
     }
 }
