@@ -1,0 +1,106 @@
+﻿@page "/agent"
+
+<PageTitle>Agent</PageTitle>
+
+<MudPaper Class="pa-4 mx-auto main-content d-flex flex-column" MaxWidth="500px" Elevation="4">
+    <MudText Typo="Typo.h5" GutterBottom="true">Agent Chat</MudText>
+    <MudPaper Class="pa-2 mb-4 chat" Elevation="1">
+        @foreach (var msg in _messages)
+        {
+            <MudChat ChatPosition="@(msg.IsUser ? ChatBubblePosition.End : ChatBubblePosition.Start)"
+                     Variant="Variant.Outlined"
+                     Color="@(msg.IsUser ? Color.Secondary : Color.Primary)">
+                <MudChatHeader Time="@(msg.GetTimeString())">@msg.User</MudChatHeader>
+                <MudChatBubble>@((MarkupString)EscapeForHtml(msg.Text))</MudChatBubble>
+            </MudChat>
+        }
+    </MudPaper>
+    <div>
+        <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true" Immediate="true"
+                      @onkeydown="HandleInputKeyDown" />
+        <MudText>@_errorMessage</MudText>
+        <div class="d-flex pb-4">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading || string.IsNullOrWhiteSpace(_inputText)" Class="mt-2">
+                Send
+                @if (_isLoading)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2"/>
+                }
+            </MudButton>
+            <MudButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="Abort" Disabled="!_isLoading" Class="mt-2 ml-2">
+                Abort
+            </MudButton>
+        </div>
+        <MudAlert Severity="Severity.Info">Chat history is known by the LLM.</MudAlert>
+    </div>
+</MudPaper>
+
+@code {
+    private string _inputText = string.Empty;
+    private bool _isLoading;
+    private CancellationTokenSource? _cancellationTokenSource;
+    private readonly List<ChatMessage> _messages = [];
+    private string _errorMessage = string.Empty;
+
+    [Inject] public required IMcpService McpService { get; set; }
+
+    private async Task Send()
+    {
+        if (string.IsNullOrWhiteSpace(_inputText))
+        {
+            return;
+        }
+        _isLoading = true;
+        _cancellationTokenSource = new CancellationTokenSource();
+        _messages.Add(ChatMessage.CreateUserMessage(_inputText));
+        var input = _inputText;
+        _inputText = string.Empty;
+        try
+        {
+            var response = await McpService.AgentAsync(input, _cancellationTokenSource.Token);
+            _messages.Add(ChatMessage.CreateAgentMessage(response));
+        }
+        catch (Exception e)
+        {
+            _errorMessage = e.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void Abort()
+    {
+        _cancellationTokenSource?.Cancel();
+    }
+
+    private static string EscapeForHtml(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return string.Empty;
+        return text.Replace("\\\"", "\"")
+                   .Replace(@"\r\n", "<br />")
+                   .Replace("\\n", "<br />");
+    }
+
+    private async Task HandleInputKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Enter" when e.ShiftKey:
+                _inputText += "\r\n";
+                break;
+            case "Enter" when !e.ShiftKey:
+                await Send();
+                break;
+        }
+    }
+
+    public record ChatMessage(string User, string Text, DateTime Timestamp, bool IsUser)
+    {
+        public static ChatMessage CreateUserMessage(string text) => new ChatMessage("User", text, DateTime.Now, true);
+        public static ChatMessage CreateAgentMessage(string text) => new ChatMessage("Agent", text, DateTime.Now, false);
+
+        public string GetTimeString() => Timestamp.ToShortTimeString();
+    }
+}}

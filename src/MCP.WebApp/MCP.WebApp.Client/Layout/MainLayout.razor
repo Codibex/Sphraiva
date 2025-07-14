@@ -1,0 +1,313 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider @ref="_mudThemeProvider" @bind-IsDarkMode="_isDarkMode" Theme="_britetheme"/>
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar>
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        Sphraiva
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_drawerOpen">
+        <NavMenu/>
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer Class="main-container" MaxWidth="MaxWidth.Large">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+@code {
+    private bool _isDarkMode;
+    private MudThemeProvider _mudThemeProvider = null!;
+
+    private bool _drawerOpen = true;
+
+    /*
+    !
+    * Bootswatch v5.3.5 (https://bootswatch.com)
+    * Theme: brite
+    * Copyright 2012-2025 Thomas Park
+    * Licensed under MIT
+    * Based on Bootstrap
+    */
+    public static readonly MudTheme _britetheme = new()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Black = "#000",
+            White = "#fff",
+            Primary = "#a2e436ff",
+            PrimaryContrastText = "#415b16ff",
+            Secondary = "#fff",
+            SecondaryContrastText = "#415b16ff",
+            Tertiary = "rgba(33, 37, 41, 0.5)",
+            TertiaryContrastText = "#415b16ff",
+            Info = "#22d2ed",
+            InfoContrastText = "#d3f6fb",
+            Success = "#68d391",
+            SuccessContrastText = "#e1f6e9",
+            Warning = "#ffc700",
+            WarningContrastText = "#fff4cc",
+            Error = "rgba(244,67,54,1)",
+            ErrorContrastText = "rgba(255,255,255,1)",
+            Dark = "#000",
+            DarkContrastText = "#ced4da",
+            TextPrimary = "#415b16ff",
+            TextSecondary = "#666666",
+            TextDisabled = "rgba(0,0,0,0.3764705882352941)",
+            ActionDefault = "rgba(0,0,0,0.5372549019607843)",
+            ActionDisabled = "rgba(0,0,0,0.25882352941176473)",
+            ActionDisabledBackground = "rgba(0,0,0,0.11764705882352941)",
+            Background = "rgba(255,255,255,1)",
+            BackgroundGray = "rgba(245,245,245,1)",
+            Surface = "rgba(255,255,255,1)",
+            DrawerBackground = "#fff",
+            DrawerText = "#fff",
+            DrawerIcon = "#fff",
+            AppbarBackground = "#ecfad7",
+            AppbarText = "#a2e436",
+            LinesDefault = "rgba(0,0,0,0.11764705882352941)",
+            LinesInputs = "rgba(189,189,189,1)",
+            TableLines = "rgba(224,224,224,1)",
+            TableStriped = "rgba(0,0,0,0.0196078431372549)",
+            TableHover = "rgba(0,0,0,0.0392156862745098)",
+            Divider = "rgba(224,224,224,1)",
+            DividerLight = "rgba(0,0,0,0.8)",
+            PrimaryDarken = "#80c115ff",
+            PrimaryLighten = "#c5fe67ff",
+            SecondaryDarken = "#d6d6d6ff",
+            SecondaryLighten = "#fff",
+            TertiaryDarken = "#0303047f",
+            TertiaryLighten = "#4b4f527f",
+            InfoDarken = "#0e545f",
+            InfoLighten = "#d3f6fb",
+            SuccessDarken = "#2a543a",
+            SuccessLighten = "#e1f6e9",
+            WarningDarken = "#665000",
+            WarningLighten = "#fff4cc",
+            ErrorDarken = "rgb(242,28,13)",
+            ErrorLighten = "rgb(246,96,85)",
+            DarkDarken = "rgb(46,46,46)",
+            DarkLighten = "rgb(87,87,87)",
+            HoverOpacity = 0.06,
+            RippleOpacity = 0.1,
+            RippleOpacitySecondary = 0.2,
+            GrayDefault = "#9E9E9E",
+            GrayLight = "#BDBDBD",
+            GrayLighter = "#E0E0E0",
+            GrayDark = "#757575",
+            GrayDarker = "#616161",
+            OverlayDark = "rgba(33,33,33,0.4980392156862745)",
+            OverlayLight = "rgba(255,255,255,0.4980392156862745)",
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Black = "#000",
+            White = "#fff",
+            Primary = "#a2e436",
+            PrimaryContrastText = "#202e0b",
+            Secondary = "#fff",
+            SecondaryContrastText = "#333333",
+            Tertiary = "rgba(222, 226, 230, 0.5)",
+            TertiaryContrastText = "#2b3035",
+            Info = "#22d2ed",
+            InfoContrastText = "#072a2f",
+            Success = "#68d391",
+            SuccessContrastText = "#152a1d",
+            Warning = "#ffc700",
+            WarningContrastText = "#332800",
+            Error = "#f56565ff",
+            ErrorContrastText = "rgba(255,255,255,1)",
+            Dark = "#00000092",
+            DarkContrastText = "#c7ef86ff",
+            TextPrimary = "#83b82cff",
+            TextSecondary = "#fff",
+            TextDisabled = "rgba(255,255,255,0.2)",
+            ActionDefault = "rgba(173,173,177,1)",
+            ActionDisabled = "rgba(255,255,255,0.25882352941176473)",
+            ActionDisabledBackground = "rgba(255,255,255,0.11764705882352941)",
+            Background = "rgba(50,51,61,1)",
+            BackgroundGray = "rgba(39,39,47,1)",
+            Surface = "rgba(55,55,64,1)",
+            DrawerBackground = "#333333",
+            DrawerText = "#fff",
+            DrawerIcon = "#fff",
+            AppbarBackground = "#202e0b",
+            AppbarText = "#a2e436",
+            LinesDefault = "rgba(255,255,255,0.11764705882352941)",
+            LinesInputs = "rgba(255,255,255,0.2980392156862745)",
+            TableLines = "rgba(255,255,255,0.11764705882352941)",
+            TableStriped = "rgba(255,255,255,0.2)",
+            Divider = "#ffffff5b",
+            DividerLight = "#ffffff20",
+            PrimaryDarken = "#c7ef86ff",
+            PrimaryLighten = "#b7fe42ff",
+            SecondaryDarken = "#d6d6d6ff",
+            SecondaryLighten = "#ffffff65",
+            TertiaryDarken = "#b7bdbd7f",
+            TertiaryLighten = "#f1f5f87f",
+            InfoDarken = "#7ae4f4",
+            InfoLighten = "#072a2f",
+            SuccessDarken = "#a4e5bd",
+            SuccessLighten = "#152a1d",
+            WarningDarken = "#ffdd66",
+            WarningLighten = "#332800",
+            ErrorDarken = "#c53737ff",
+            ErrorLighten = "#fe8f8fff",
+            DarkDarken = "#17171cff",
+            DarkLighten = "#424242ff",
+        },
+        LayoutProperties = new LayoutProperties()
+        {
+            DefaultBorderRadius = "8px",
+            DrawerMiniWidthLeft = "56px",
+            DrawerMiniWidthRight = "56px",
+            DrawerWidthLeft = "240px",
+            DrawerWidthRight = "240px",
+            AppbarHeight = "64px",
+        },
+        Typography = new Typography()
+        {
+            Default = new DefaultTypography
+            {
+                FontFamily = ["Roboto", "Helvetica", "Arial", "sans-serif"],
+                FontWeight = "400",
+                FontSize = ".875rem",
+                LineHeight = "1.43",
+                LetterSpacing = ".01071em",
+                TextTransform = "none",
+            },
+            H1 = new H1Typography
+            {
+                FontWeight = "300",
+                FontSize = "6rem",
+                LineHeight = "1.167",
+                LetterSpacing = "-.01562em",
+                TextTransform = "none",
+            },
+            H2 = new H2Typography
+            {
+                FontWeight = "300",
+                FontSize = "3.75rem",
+                LineHeight = "1.2",
+                LetterSpacing = "-.00833em",
+                TextTransform = "none",
+            },
+            H3 = new H3Typography
+            {
+                FontWeight = "400",
+                FontSize = "3rem",
+                LineHeight = "1.167",
+                LetterSpacing = "0",
+                TextTransform = "none",
+            },
+            H4 = new H4Typography
+            {
+                FontWeight = "400",
+                FontSize = "2.125rem",
+                LineHeight = "1.235",
+                LetterSpacing = ".00735em",
+                TextTransform = "none",
+            },
+            H5 = new H5Typography
+            {
+                FontWeight = "400",
+                FontSize = "1.5rem",
+                LineHeight = "1.334",
+                LetterSpacing = "0",
+                TextTransform = "none",
+            },
+            H6 = new H6Typography
+            {
+                FontWeight = "500",
+                FontSize = "1.25rem",
+                LineHeight = "1.6",
+                LetterSpacing = ".0075em",
+                TextTransform = "none",
+            },
+            Subtitle1 = new Subtitle1Typography
+            {
+                FontWeight = "400",
+                FontSize = "1rem",
+                LineHeight = "1.75",
+                LetterSpacing = ".00938em",
+                TextTransform = "none",
+            },
+            Subtitle2 = new Subtitle2Typography
+            {
+                FontWeight = "500",
+                FontSize = ".875rem",
+                LineHeight = "1.57",
+                LetterSpacing = ".00714em",
+                TextTransform = "none",
+            },
+            Body1 = new Body1Typography
+            {
+                FontWeight = "400",
+                FontSize = "0.875rem",
+                LineHeight = "1.5",
+                LetterSpacing = ".00938em",
+                TextTransform = "none",
+            },
+            Body2 = new Body2Typography
+            {
+                FontWeight = "400",
+                FontSize = ".875rem",
+                LineHeight = "1.43",
+                LetterSpacing = ".01071em",
+                TextTransform = "none",
+            },
+            Button = new ButtonTypography
+            {
+                FontWeight = "500",
+                FontSize = ".875rem",
+                LineHeight = "1.75",
+                LetterSpacing = ".02857em",
+                TextTransform = "uppercase",
+            },
+            Caption = new CaptionTypography
+            {
+                FontWeight = "400",
+                FontSize = ".75rem",
+                LineHeight = "1.66",
+                LetterSpacing = ".03333em",
+                TextTransform = "none",
+            },
+            Overline = new OverlineTypography
+            {
+                FontWeight = "400",
+                FontSize = ".75rem",
+                LineHeight = "2.66",
+                LetterSpacing = ".08333em",
+                TextTransform = "none",
+            },
+        },
+        ZIndex = new ZIndex()
+        {
+            Drawer = 1100,
+            Popover = 1200,
+            AppBar = 1300,
+            Dialog = 1400,
+            Snackbar = 1500,
+            Tooltip = 1600,
+        },
+    };
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isDarkMode = await _mudThemeProvider.GetSystemDarkModeAsync();
+            StateHasChanged();
+        }
+    }
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}

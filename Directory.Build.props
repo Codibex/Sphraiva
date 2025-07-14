@@ -1,0 +1,36 @@
+<Project>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Version>0.0.1</Version>
+        <AssemblyVersion>$(Version).0</AssemblyVersion>
+        <FileVersion>$(Version).0</FileVersion>
+        <InformationalVersion>$(Version)</InformationalVersion>
+    </PropertyGroup>
+
+    <PropertyGroup>
+      <PropsFileDirectory>$(MSBuildThisFileDirectory)</PropsFileDirectory>
+      <CurrentYear>$([System.DateTime]::Now.ToString(yyyy))</CurrentYear>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Authors>Codibex</Authors>
+        <Product>Inyron</Product>
+        <Description>A shopping assistant application with inventory tracking, designed to streamline the shopping experience and manage stock levels efficiently.</Description>
+        <Copyright>© $(CurrentYear) Codibex. All rights reserved.</Copyright>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <StyleCopTreatErrorsAsWarnings>false</StyleCopTreatErrorsAsWarnings>
+        <NoWarn>NU1602;NU1604;NU1701;NU1902;NU1903;SKEXP0001;SKEXP0070</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+      <AssemblyName>Sphraiva.$(MSBuildProjectName)</AssemblyName>
+    </PropertyGroup>
+</Project>

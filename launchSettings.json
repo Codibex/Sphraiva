@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "serviceActions": {
+        "sphraiva-mcp-host": "StartDebugging",
+        "sphraiva-mcp-server": "StartDebugging",
+        "sphraiva-mcp-web-app": "StartDebugging",
+        "sphraiva-mcp-backgroundworker-filesystem": "StartDebugging"
+      }
+    }
+  }
+}

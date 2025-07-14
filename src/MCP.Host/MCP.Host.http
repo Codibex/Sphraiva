@@ -1,0 +1,19 @@
+@MCP.Host_HostAddress = http://localhost:20010
+
+POST {{MCP.Host_HostAddress}}/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+  "message": "Call the function read_file with the parameter { \"Path\": \"Recipe.md\" }"
+}
+
+###
+
+POST {{MCP.Host_HostAddress}}/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+  "message": "can you provide me the Recipe.md file content?"
+}

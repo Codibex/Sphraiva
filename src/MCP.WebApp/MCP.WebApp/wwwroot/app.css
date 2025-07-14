@@ -1,0 +1,24 @@
+html, body {
+    height: 100vh;
+    width: 100vw;
+}
+
+div.mud-main-content {
+    height: 100%;
+    overflow: hidden;
+}
+
+.main-container {
+    height: calc(100% - 2rem);
+}
+
+
+.main-content {
+    height: 100%;
+}
+
+.chat {
+    flex: 1 1 auto;
+    height: 100%;
+    overflow: auto;
+}
