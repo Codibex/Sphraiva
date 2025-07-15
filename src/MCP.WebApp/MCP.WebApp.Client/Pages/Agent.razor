@@ -6,7 +6,7 @@
 <div class="main-content">
     <MudPaper Class="ma-4 pa-4 mx-auto d-flex flex-column chat-container" MaxWidth="500px" Elevation="4">
         <MudText Typo="Typo.h5" GutterBottom="true">Agent Chat</MudText>
-        <MudPaper Class="pa-2 mb-4 chat" Elevation="1">
+        <MudPaper id="chat" Class="pa-2 mb-4 chat" Elevation="1">
             @foreach (var msg in _messages)
             {
                 <MudChat ChatPosition="@(msg.IsUser ? ChatBubblePosition.End : ChatBubblePosition.Start)"
@@ -36,7 +36,8 @@
             <MudAlert Severity="Severity.Info">Chat history is known by the LLM.</MudAlert>
         </div>
     </MudPaper>
-</div
+</div>
+
 @code {
     private string _inputText = string.Empty;
     private bool _isLoading;
@@ -44,6 +45,7 @@
     private readonly List<ChatMessage> _messages = [];
     private string _errorMessage = string.Empty;
 
+    [Inject] public required IJSRuntime Js { get; set; }
     [Inject] public required IMcpService McpService { get; set; }
 
     private async Task Send()
@@ -55,17 +57,18 @@
         _isLoading = true;
         _errorMessage = String.Empty;
         _cancellationTokenSource = new CancellationTokenSource();
-        _messages.Add(ChatMessage.CreateUserMessage(_inputText));
+        await AddMessage(ChatMessage.CreateUserMessage(_inputText));
+
         var input = _inputText;
         _inputText = string.Empty;
         try
         {
-            var agentMsg = ChatMessage.CreateAgentMessage("");
-            _messages.Add(agentMsg);
+            var agentMsg = ChatMessage.CreateAgentMessage(string.Empty);
+            await AddMessage(agentMsg, true);
             await McpService.AgentStreamAsync(input, chunk =>
             {
                 agentMsg.Text += chunk;
-                InvokeAsync(StateHasChanged);
+                _ = ScrollToBottom(true);
             }, _cancellationTokenSource.Token);
         }
         catch (Exception e)
@@ -76,6 +79,22 @@
         {
             _isLoading = false;
         }
+    }
+
+    private async Task AddMessage(ChatMessage message, bool callStateHasChanged = false)
+    {
+        _messages.Add(message);
+        await ScrollToBottom(callStateHasChanged);
+    }
+
+    private async Task ScrollToBottom(bool callStateHasChanged = false)
+    {
+        
+        if (callStateHasChanged)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+        await Js.InvokeVoidAsync("scrollToBottom", "chat");
     }
 
     private void Abort()
