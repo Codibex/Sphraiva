@@ -72,25 +72,33 @@ public static class Endpoints
 #pragma warning restore SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
             var messages = new List<StreamingChatMessageContent>();
-            await agent
-                .InvokeStreamingAsync(request.Message, _agentThread, cancellationToken: cancellationToken)
-                .AggregateAsync(messages, (current, responseItem) =>
-                {
-                    current.Add(responseItem.Message);
-                    return current;
-                }, cancellationToken: cancellationToken);
-            
-            await foreach (var result in agent.InvokeAsync(request.Message, _agentThread, cancellationToken: cancellationToken))
+
+            try
             {
-                var content = result.Message.Content;
-                await response.WriteAsync(content ?? "No response", cancellationToken);
-                await response.Body.FlushAsync(cancellationToken);
+                await agent
+                     .InvokeStreamingAsync(request.Message, _agentThread, cancellationToken: cancellationToken)
+                     .AggregateAsync(messages, (current, responseItem) =>
+                     {
+                         current.Add(responseItem.Message);
+                         return current;
+                     }, cancellationToken: cancellationToken);
+
+                await foreach (var result in agent.InvokeAsync(request.Message, _agentThread, cancellationToken: cancellationToken))
+                {
+                    var content = result.Message.Content;
+                    await response.WriteAsync(content ?? "No response", cancellationToken);
+                    await response.Body.FlushAsync(cancellationToken);
+                }
+                //return Results.Ok(new
+                //{
+                //    response.Content,
+                //    response.Role
+                //});
             }
-            //return Results.Ok(new
-            //{
-            //    response.Content,
-            //    response.Role
-            //});
+            catch (TaskCanceledException)
+            {
+                // Optionally log or ignore; do not treat as error
+            }
         }));
     }
 }

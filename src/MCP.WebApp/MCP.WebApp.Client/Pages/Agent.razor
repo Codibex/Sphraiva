@@ -18,8 +18,7 @@
             }
         </MudPaper>
         <div>
-            <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true" Immediate="true"
-                          @onkeydown="HandleInputKeyDown" />
+            <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true" Immediate="true" />
             <MudText>@_errorMessage</MudText>
             <div class="d-flex pb-4">
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading || string.IsNullOrWhiteSpace(_inputText)" Class="mt-2">
@@ -54,13 +53,16 @@
         {
             return;
         }
+
         _isLoading = true;
         _errorMessage = string.Empty;
         _cancellationTokenSource = new CancellationTokenSource();
-        await AddMessage(ChatMessage.CreateUserMessage(_inputText));
 
         var input = _inputText;
         _inputText = string.Empty;
+
+        await AddMessage(ChatMessage.CreateUserMessage(input));
+
         try
         {
             var agentMsg = ChatMessage.CreateAgentMessage(string.Empty);
@@ -89,10 +91,9 @@
 
     private async Task ScrollToBottom(bool callStateHasChanged = false)
     {
-        
         if (callStateHasChanged)
         {
-            await InvokeAsync(StateHasChanged);
+            StateHasChanged();
         }
         await Js.InvokeVoidAsync("scrollToBottom", "chat");
     }
@@ -108,14 +109,6 @@
         return text.Replace("\\\"", "\"")
                    .Replace(@"\r\n", "<br />")
                    .Replace("\\n", "<br />");
-    }
-
-    private async Task HandleInputKeyDown(KeyboardEventArgs e)
-    {
-        if (e is { Key: "Enter", ShiftKey: false })
-        {
-            await Send();
-        }
     }
 
     public class ChatMessage(string user, string text, DateTime timestamp, bool isUser)
