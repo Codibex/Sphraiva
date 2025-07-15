@@ -17,4 +17,8 @@
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MCP.Host.Contracts\MCP.Host.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>
