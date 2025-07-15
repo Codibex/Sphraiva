@@ -6,7 +6,7 @@ Sphraiva is a modular C#/.NET application designed for local operation, implemen
 - **MCP.Host**: Provides API endpoints and manages communication between agents and the server.
 - **MCP.Server**: Handles core backend logic, agent orchestration, and workflow management.
 - **LLM (Ollama Container)**: Large Language Model running in a dedicated Docker container for inference tasks.
-- **MCP.BackgroundWorker.FileSystem**: Responsible for file system ingestion and embedding generation. It operates independently and does not interact directly with the MCP.Server component.
+- **MCP.BackgroundWorker.FileSystem**: Responsible for file system ingestion and embedding generation. This component operates independently and does not interact directly with the MCP.Server component.
 - **Qdrant**: Vector database for storing and searching embeddings.
 - **Agent Containers**: Run in Docker containers and execute tasks as directed by the server.
 
