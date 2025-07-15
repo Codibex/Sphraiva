@@ -55,7 +55,7 @@
             return;
         }
         _isLoading = true;
-        _errorMessage = String.Empty;
+        _errorMessage = string.Empty;
         _cancellationTokenSource = new CancellationTokenSource();
         await AddMessage(ChatMessage.CreateUserMessage(_inputText));
 
@@ -112,14 +112,9 @@
 
     private async Task HandleInputKeyDown(KeyboardEventArgs e)
     {
-        switch (e.Key)
+        if (e is { Key: "Enter", ShiftKey: false })
         {
-            case "Enter" when e.ShiftKey:
-                _inputText += "\r\n";
-                break;
-            case "Enter" when !e.ShiftKey:
-                await Send();
-                break;
+            await Send();
         }
     }
 
