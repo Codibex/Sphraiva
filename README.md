@@ -9,6 +9,20 @@ Sphraiva is a C# solution for local operation, implementing the Model Context Pr
 - Retrieval-Augmented Generation (RAG) integration
 - Easy configuration and deployment
 - C#/.NET based for easy extensibility
+- Modular architecture see [Architecture Overview](docs/overview.md)
+
+## Getting Started
+
+1. Build and run the solution using Visual Studio or `dotnet` CLI.
+2. Access the web interface via `http://localhost:20000`.
+
+## Technologies
+
+- .NET 9 / C#
+- Docker (for dev containers and agents)
+- Blazor (Web UI)
+- MudBlazor (UI components)
+- GitHub integration for agent operations
 
 ## Contributing
 
