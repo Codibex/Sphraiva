@@ -18,7 +18,9 @@ public static class ServiceCollectionExtensions
             {
                 BaseAddress = new Uri(configuration["OLLAMA_SERVER"] ?? throw new InvalidOperationException("Configuration key 'OLLAMA_SERVER' is missing or null.")),
                 Timeout = TimeSpan.FromMinutes(5)
-            }, configuration["LLM_MODEL"]!)
+            }, string.IsNullOrWhiteSpace(configuration["LLM_MODEL"]) 
+                ? throw new ArgumentException("The configuration value for 'LLM_MODEL' is missing or empty.") 
+                : configuration["LLM_MODEL"])
         );
 
         services.AddTransient(sp =>
