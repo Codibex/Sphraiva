@@ -27,3 +27,7 @@ div.mud-main-content {
     height: 100%;
     overflow: auto;
 }
+
+.w-100 {
+    width: 100%;
+}

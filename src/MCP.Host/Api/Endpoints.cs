@@ -6,13 +6,12 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 using Microsoft.SemanticKernel.Data;
+using MCP.Host.Chat;
 
 namespace MCP.Host.Api;
 
 public static class Endpoints
 {
-    private static readonly ChatHistoryAgentThread _agentThread = new();
-
     public static void MapEndpoints(this WebApplication app)
     {
         app.MapPost("/chat", async (ChatRequest request, IKernelProvider kernelProvider, CancellationToken cancellationToken) =>
@@ -46,9 +45,12 @@ public static class Endpoints
             return Results.BadRequest("Function not callable");
         });
 
-        app.MapPost("/agent", async (ChatRequest request, IKernelProvider kernelProvider, VectorStoreTextSearch<TextParagraph> textSearchStore, HttpResponse response, CancellationToken cancellationToken) =>
+        app.MapPost("/agent/chat", async (HeaderValueProvider headerValueProvider, ChatRequest request, IKernelProvider kernelProvider, VectorStoreTextSearch<TextParagraph> textSearchStore, ChatCache chatCache, HttpResponse response, CancellationToken cancellationToken) =>
         {
             response.ContentType = MediaTypeNames.Text.EventStream;
+
+            var chatId = headerValueProvider.ChatId!.Value;
+            var thread = chatCache.GetOrCreateThread(chatId);
 
             var kernel = kernelProvider.Get();
 
@@ -57,7 +59,10 @@ public static class Endpoints
                 {
                     Name = "FriendlyAssistant",
                     Instructions = """
-                                   You are a friendly assistant.
+                                   You are a helpful and friendly assistant.
+                                   Feel free to have a conversational and engaging tone.
+                                   Answer questions informatively, but you can also ask clarifying questions or make small talk if appropriate.
+                                   Use simple markdown to format your responses.
                                    Use the available tools to answer user requests.
                                    """,
                     Kernel = kernel,
@@ -69,9 +74,9 @@ public static class Endpoints
                 };
 #pragma warning disable SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 #pragma warning disable SKEXP0130
-            if (_agentThread.AIContextProviders.Providers.Count == 0)
+            if (thread.AIContextProviders.Providers.Count == 0)
             {
-                _agentThread.AIContextProviders.Add(new TextSearchProvider(textSearchStore));
+                thread.AIContextProviders.Add(new TextSearchProvider(textSearchStore));
             }
 #pragma warning restore SKEXP0130
 #pragma warning restore SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
@@ -81,14 +86,14 @@ public static class Endpoints
             try
             {
                 await agent
-                     .InvokeStreamingAsync(request.Message, _agentThread, cancellationToken: cancellationToken)
+                     .InvokeStreamingAsync(request.Message, thread, cancellationToken: cancellationToken)
                      .AggregateAsync(messages, (current, responseItem) =>
                      {
                          current.Add(responseItem.Message);
                          return current;
                      }, cancellationToken: cancellationToken);
 
-                await foreach (var result in agent.InvokeAsync(request.Message, _agentThread, cancellationToken: cancellationToken))
+                await foreach (var result in agent.InvokeAsync(request.Message, thread, cancellationToken: cancellationToken))
                 {
                     var content = result.Message.Content;
                     await response.WriteAsync(content ?? "No response", cancellationToken);
@@ -104,6 +109,14 @@ public static class Endpoints
             {
                 // Optionally log or ignore; do not treat as error
             }
-        });
+        })
+        .AddEndpointFilter<RequireChatIdEndpointFilter>();
+
+        app.MapDelete("/agent/chat", (HeaderValueProvider headerValueProvider, ChatCache chatCache) =>
+            {
+                chatCache.Remove(headerValueProvider.ChatId!.Value);
+                return Results.NoContent();
+            })
+        .AddEndpointFilter<RequireChatIdEndpointFilter>();
     }
 }

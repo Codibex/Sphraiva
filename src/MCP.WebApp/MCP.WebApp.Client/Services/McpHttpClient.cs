@@ -7,17 +7,23 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
 {
     public async Task<string> ChatAsync(string message, CancellationToken cancellationToken)
     {
-        var response = await httpClient.PostAsJsonAsync("chat", new
+        using var request = new HttpRequestMessage(HttpMethod.Post, "chat")
         {
-            message
-        }, cancellationToken);
+            Content = JsonContent.Create(new ChatRequest(message))
+        };
+        var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(cancellationToken);
     }
 
-    public async Task AgentStreamAsync(string message, Action<string> onChunk, CancellationToken cancellationToken)
+    public async Task AgentStreamAsync(Guid chatId, string message, Action<string> onChunk,
+        CancellationToken cancellationToken)
     {
-        var response = await httpClient.PostAsJsonAsync("agent", new ChatRequest(message), cancellationToken);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "agent/chat");
+        request.Headers.Add(HeaderNames.ChatIdHeaderName, chatId.ToString());
+        request.Content = JsonContent.Create(new ChatRequest( message));
+
+        var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var reader = new StreamReader(stream);
@@ -28,5 +34,14 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
                 onChunk(line);
             }
         }
+    }
+
+    public async Task RemoveChatAsync(Guid chatId, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, "agent/chat");
+        request.Headers.Add(HeaderNames.ChatIdHeaderName, chatId.ToString());
+
+        var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        response.EnsureSuccessStatusCode();
     }
 }

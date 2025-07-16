@@ -1,0 +1,111 @@
+﻿@using MCP.WebApp.Client.Services
+<MudPaper Class="pa-4 mx-auto d-flex flex-column chat-container w-100" MaxWidth="1000px" Elevation="4">
+    <MudText Typo="Typo.h5" GutterBottom="true">Agent Chat</MudText>
+    <MudPaper id="@Id" Class="pa-2 mb-4 chat" Elevation="1">
+        @foreach (var message in ChatViewModel.Messages)
+        {
+            <MudChat ChatPosition="@(message.IsUser ? ChatBubblePosition.End : ChatBubblePosition.Start)"
+                     Variant="Variant.Outlined"
+                     Color="@(message.IsUser ? Color.Secondary : Color.Primary)">
+                <MudChatHeader Time="@(message.GetTimeString())">@message.User</MudChatHeader>
+                <MudChatBubble>@((MarkupString)EscapeForHtml(message.Text))</MudChatBubble>
+            </MudChat>
+        }
+    </MudPaper>
+    <div>
+        <MudTextField @bind-Value="_inputText" Label="Message" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true" Immediate="true"/>
+        <MudText>@_errorMessage</MudText>
+        <div class="d-flex pb-4">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading || string.IsNullOrWhiteSpace(_inputText)" Class="mt-2">
+                Send
+                @if (_isLoading)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2"/>
+                }
+            </MudButton>
+            <MudButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="Abort" Disabled="!_isLoading" Class="mt-2 ml-2">
+                Abort
+            </MudButton>
+        </div>
+        <MudAlert Severity="Severity.Info">Chat history is known by the LLM.</MudAlert>
+    </div>
+</MudPaper>
+
+@code {
+    private string _inputText = string.Empty;
+    private bool _isLoading;
+    private CancellationTokenSource? _cancellationTokenSource;
+    private string _errorMessage = string.Empty;
+
+    [Inject] public required IJSRuntime Js { get; set; }
+    [Inject] public required IMcpService McpService { get; set; }
+
+    [Parameter]
+    public required ChatViewModel ChatViewModel { get; set; }
+
+    private string Id => $"chat-{ChatViewModel.ChatId}";
+
+    private async Task Send()
+    {
+        if (string.IsNullOrWhiteSpace(_inputText))
+        {
+            return;
+        }
+
+        _isLoading = true;
+        _errorMessage = string.Empty;
+        _cancellationTokenSource = new CancellationTokenSource();
+
+        var input = _inputText;
+        _inputText = string.Empty;
+
+        await AddMessage(ChatMessageViewModel.CreateUserMessage(input));
+
+        try
+        {
+            var agentMsg = ChatMessageViewModel.CreateAgentMessage(string.Empty);
+            await AddMessage(agentMsg, true);
+            await McpService.AgentStreamAsync(ChatViewModel.ChatId, input, chunk =>
+            {
+                agentMsg.Text += chunk;
+                _ = ScrollToBottom(true);
+            }, _cancellationTokenSource.Token);
+        }
+        catch (Exception e)
+        {
+            _errorMessage = e.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task AddMessage(ChatMessageViewModel messageViewModel, bool callStateHasChanged = false)
+    {
+        ChatViewModel.Messages.Add(messageViewModel);
+        await ScrollToBottom(callStateHasChanged);
+    }
+
+    private async Task ScrollToBottom(bool callStateHasChanged = false)
+    {
+        if (callStateHasChanged)
+        {
+            StateHasChanged();
+        }
+        await Js.InvokeVoidAsync("scrollToBottom", $"{Id}");
+    }
+
+    private void Abort()
+    {
+        _cancellationTokenSource?.Cancel();
+    }
+
+    private static string EscapeForHtml(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return string.Empty;
+        return text.Replace("\\\"", "\"")
+                   .Replace(@"\r\n", "<br />")
+                   .Replace("\\n", "<br />");
+    }
+}
