@@ -20,7 +20,7 @@ public static class ServiceCollectionExtensions
                 Timeout = TimeSpan.FromMinutes(5)
             }, string.IsNullOrWhiteSpace(configuration["LLM_MODEL"]) 
                 ? throw new ArgumentException("The configuration value for 'LLM_MODEL' is missing or empty.") 
-                : configuration["LLM_MODEL"])
+                : configuration["LLM_MODEL"]!)
         );
 
         services.AddTransient(sp =>
