@@ -16,7 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(sp =>
             new OllamaApiClient(new HttpClient
             {
-                BaseAddress = new Uri(configuration["OLLAMA_SERVER"]!),
+                BaseAddress = new Uri(configuration["OLLAMA_SERVER"] ?? throw new InvalidOperationException("Configuration key 'OLLAMA_SERVER' is missing or null.")),
                 Timeout = TimeSpan.FromMinutes(5)
             }, configuration["LLM_MODEL"]!)
         );
