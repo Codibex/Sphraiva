@@ -1,3 +1,5 @@
+using MCP.Host.Contracts;
+
 namespace MCP.Host.Chat;
 
 /// <summary>
@@ -10,7 +12,7 @@ public class RequireChatIdEndpointFilter : IEndpointFilter
         var headerValueProvider = context.Arguments.OfType<HeaderValueProvider>().FirstOrDefault();
         if (headerValueProvider?.ChatId is null)
         {
-            return Results.BadRequest($"Missing {HeaderValueProvider.ChatIdHeaderName} header");
+            return Results.BadRequest($"Missing {HeaderNames.ChatIdHeaderName} header");
         }
         return await next(context);
     }

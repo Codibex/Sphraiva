@@ -9,5 +9,4 @@ public class HeaderValueProvider
     /// The unique chat identifier.
     /// </summary>
     public Guid? ChatId { get; set; }
-    public const string ChatIdHeaderName = "sphraiva-chat-id";
 }

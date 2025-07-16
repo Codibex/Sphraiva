@@ -7,8 +7,8 @@ public class McpService(IMcpHttpClient mcpHttpClient) : IMcpService
         return await mcpHttpClient.ChatAsync(message, cancellationToken);
     }
 
-    public async Task AgentStreamAsync(string message, Action<string> onChunk, CancellationToken cancellationToken)
+    public async Task AgentStreamAsync(Guid chatId, string message, Action<string> onChunk, CancellationToken cancellationToken)
     {
-        await mcpHttpClient.AgentStreamAsync(message, onChunk, cancellationToken);
+        await mcpHttpClient.AgentStreamAsync(chatId, message, onChunk, cancellationToken);
     }
 }

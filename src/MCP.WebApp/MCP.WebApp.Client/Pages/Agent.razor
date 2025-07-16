@@ -1,126 +1,34 @@
 ﻿@page "/agent"
-@using MCP.WebApp.Client.Services
 
 <PageTitle>Agent</PageTitle>
 
-<div class="main-content">
-    <MudPaper Class="ma-4 pa-4 mx-auto d-flex flex-column chat-container" MaxWidth="500px" Elevation="4">
-        <MudText Typo="Typo.h5" GutterBottom="true">Agent Chat</MudText>
-        <MudPaper id="chat" Class="pa-2 mb-4 chat" Elevation="1">
-            @foreach (var msg in _messages)
-            {
-                <MudChat ChatPosition="@(msg.IsUser ? ChatBubblePosition.End : ChatBubblePosition.Start)"
-                         Variant="Variant.Outlined"
-                         Color="@(msg.IsUser ? Color.Secondary : Color.Primary)">
-                    <MudChatHeader Time="@(msg.GetTimeString())">@msg.User</MudChatHeader>
-                    <MudChatBubble>@((MarkupString)EscapeForHtml(msg.Text))</MudChatBubble>
-                </MudChat>
-            }
-        </MudPaper>
-        <div>
-            <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true" Immediate="true" />
-            <MudText>@_errorMessage</MudText>
-            <div class="d-flex pb-4">
-                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading || string.IsNullOrWhiteSpace(_inputText)" Class="mt-2">
-                    Send
-                    @if (_isLoading)
-                    {
-                        <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2"/>
-                    }
-                </MudButton>
-                <MudButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="Abort" Disabled="!_isLoading" Class="mt-2 ml-2">
-                    Abort
-                </MudButton>
-            </div>
-            <MudAlert Severity="Severity.Info">Chat history is known by the LLM.</MudAlert>
-        </div>
-    </MudPaper>
+<div class="main-content d-flex">
+    <MudTabs Class="w-100" Outlined="true" Elevation="4" Border="true" ApplyEffectsToContainer="true" Position="Position.Right" PanelClass="pa-4">
+        <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddNewChat">New Chat</MudIconButton>
+        @foreach (var chat in _chatsViewModels)
+        {
+            <MudTabPanel Text="@chat.DisplayName">
+                <Chat ChatViewModel="@chat"/>
+            </MudTabPanel>
+        }
+    </MudTabs>
 </div>
 
 @code {
-    private string _inputText = string.Empty;
-    private bool _isLoading;
-    private CancellationTokenSource? _cancellationTokenSource;
-    private readonly List<ChatMessage> _messages = [];
-    private string _errorMessage = string.Empty;
+    private readonly IList<ChatViewModel> _chatsViewModels = [];
 
-    [Inject] public required IJSRuntime Js { get; set; }
-    [Inject] public required IMcpService McpService { get; set; }
-
-    private async Task Send()
+    protected override void OnInitialized()
     {
-        if (string.IsNullOrWhiteSpace(_inputText))
+        if (_chatsViewModels.Count == 0)
         {
-            return;
-        }
-
-        _isLoading = true;
-        _errorMessage = string.Empty;
-        _cancellationTokenSource = new CancellationTokenSource();
-
-        var input = _inputText;
-        _inputText = string.Empty;
-
-        await AddMessage(ChatMessage.CreateUserMessage(input));
-
-        try
-        {
-            var agentMsg = ChatMessage.CreateAgentMessage(string.Empty);
-            await AddMessage(agentMsg, true);
-            await McpService.AgentStreamAsync(input, chunk =>
-            {
-                agentMsg.Text += chunk;
-                _ = ScrollToBottom(true);
-            }, _cancellationTokenSource.Token);
-        }
-        catch (Exception e)
-        {
-            _errorMessage = e.Message;
-        }
-        finally
-        {
-            _isLoading = false;
+            AddNewChat();
         }
     }
 
-    private async Task AddMessage(ChatMessage message, bool callStateHasChanged = false)
+    private void AddNewChat()
     {
-        _messages.Add(message);
-        await ScrollToBottom(callStateHasChanged);
-    }
-
-    private async Task ScrollToBottom(bool callStateHasChanged = false)
-    {
-        if (callStateHasChanged)
-        {
-            StateHasChanged();
-        }
-        await Js.InvokeVoidAsync("scrollToBottom", "chat");
-    }
-
-    private void Abort()
-    {
-        _cancellationTokenSource?.Cancel();
-    }
-
-    private static string EscapeForHtml(string text)
-    {
-        if (string.IsNullOrEmpty(text)) return string.Empty;
-        return text.Replace("\\\"", "\"")
-                   .Replace(@"\r\n", "<br />")
-                   .Replace("\\n", "<br />");
-    }
-
-    public class ChatMessage(string user, string text, DateTime timestamp, bool isUser)
-    {
-        public string User { get; } = user;
-        public string Text { get; set; } = text;
-        public DateTime Timestamp { get; } = timestamp;
-        public bool IsUser { get; } = isUser;
-
-        public static ChatMessage CreateUserMessage(string text) => new ChatMessage("User", text, DateTime.Now, true);
-        public static ChatMessage CreateAgentMessage(string text) => new ChatMessage("Agent", text, DateTime.Now, false);
-
-        public string GetTimeString() => Timestamp.ToShortTimeString();
+        var chat = new ChatViewModel(Guid.NewGuid(), $"Chat {_chatsViewModels.Count + 1}");
+        _chatsViewModels.Add(chat);
+        // StateHasChanged();
     }
 }
