@@ -1,6 +1,5 @@
 using MCP.Host.Contracts;
 using System.Net.Http.Json;
-using System.Threading;
 
 namespace MCP.WebApp.Client.Services;
 

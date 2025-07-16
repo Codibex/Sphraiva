@@ -1,5 +1,3 @@
-using System.Threading;
-
 namespace MCP.WebApp.Client.Services;
 
 public class McpService(IMcpHttpClient mcpHttpClient) : IMcpService
@@ -14,8 +12,8 @@ public class McpService(IMcpHttpClient mcpHttpClient) : IMcpService
         await mcpHttpClient.AgentStreamAsync(chatId, message, onChunk, cancellationToken);
     }
 
-    public async Task RemoveChatAsync(Guid chatId)
+    public async Task RemoveChatAsync(Guid chatId, CancellationToken cancellationToken)
     {
-        await mcpHttpClient.RemoveChatAsync(chatId);
+        await mcpHttpClient.RemoveChatAsync(chatId, cancellationToken);
     }
 }
