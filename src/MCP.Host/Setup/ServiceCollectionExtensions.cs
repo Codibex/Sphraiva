@@ -40,8 +40,21 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddQdrantServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton(sp =>
-            new QdrantClient(configuration["QDRANT_HOST"]!, int.Parse(configuration["QDRANT_PORT"]!))
-        );
+        {
+            var host = configuration["QDRANT_HOST"];
+            if (string.IsNullOrWhiteSpace(host))
+            {
+                throw new InvalidOperationException("QDRANT_HOST configuration value is missing or empty.");
+            }
+
+            var portValue = configuration["QDRANT_PORT"];
+            if (!int.TryParse(portValue, out var port))
+            {
+                throw new InvalidOperationException("QDRANT_PORT configuration value is missing or not a valid integer.");
+            }
+
+            return new QdrantClient(host, port);
+        });
         services.AddTransient<ITextSearchStringMapper, TextParagraphTextSearchStringMapper>();
         services.AddTransient<ITextSearchResultMapper, TextParagraphTextSearchResultMapper>();
 
