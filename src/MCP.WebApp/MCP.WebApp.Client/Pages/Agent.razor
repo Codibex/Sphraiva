@@ -3,32 +3,46 @@
 <PageTitle>Agent</PageTitle>
 
 <div class="main-content d-flex">
-    <MudTabs Class="w-100" Outlined="true" Elevation="4" Border="true" ApplyEffectsToContainer="true" Position="Position.Right" PanelClass="pa-4">
-        <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddNewChat">New Chat</MudIconButton>
+    <MudDynamicTabs @bind-ActivePanelIndex="@_activePanelIndex" AddTab="AddNewChat" 
+                    Rounded="false" Position="Position.Right" 
+                    Elevation="4" Class="w-100" AddIconClass="btn-secondary">
         @foreach (var chat in _chatsViewModels)
         {
-            <MudTabPanel Text="@chat.DisplayName">
-                <Chat ChatViewModel="@chat"/>
+            <MudTabPanel Text="@chat.DisplayName" ID="@chat.ChatId" ShowCloseIcon="false">
+                <Chat ChatViewModel="@chat" />
             </MudTabPanel>
         }
-    </MudTabs>
+    </MudDynamicTabs>
 </div>
 
 @code {
+    private bool _stateHasChanged;
+
+    private int _activePanelIndex = 0;
     private readonly IList<ChatViewModel> _chatsViewModels = [];
 
     protected override void OnInitialized()
     {
-        if (_chatsViewModels.Count == 0)
+        base.OnInitialized();
+        AddNewChat();
+        _stateHasChanged = true;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (!_stateHasChanged)
         {
-            AddNewChat();
+            return;
         }
+        _stateHasChanged = false;
+        StateHasChanged();
     }
 
     private void AddNewChat()
     {
         var chat = new ChatViewModel(Guid.NewGuid(), $"Chat {_chatsViewModels.Count + 1}");
         _chatsViewModels.Add(chat);
-        // StateHasChanged();
+        _activePanelIndex = _chatsViewModels.Count - 1;
     }
 }

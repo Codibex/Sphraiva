@@ -59,7 +59,10 @@ public static class Endpoints
                 {
                     Name = "FriendlyAssistant",
                     Instructions = """
-                                   You are a friendly assistant.
+                                   You are a helpful and friendly assistant.
+                                   Feel free to have a conversational and engaging tone.
+                                   Answer questions informatively, but you can also ask clarifying questions or make small talk if appropriate.
+                                   Use simple markdown to format your responses.
                                    Use the available tools to answer user requests.
                                    """,
                     Kernel = kernel,
