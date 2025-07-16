@@ -19,6 +19,6 @@ internal sealed class TextParagraphTextSearchResultMapper : ITextSearchResultMap
                 Link = dataModel.DocumentUri,
             };
         }
-        throw new ArgumentException("Invalid result type.");
+        throw new ArgumentException($"Invalid result type. Expected: {typeof(TextParagraph)}, Actual: {result.GetType()}.");
     }
 }
