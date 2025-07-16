@@ -1,5 +1,6 @@
 using MCP.Host.Contracts;
 using System.Net.Http.Json;
+using System.Threading;
 
 namespace MCP.WebApp.Client.Services;
 
@@ -19,7 +20,7 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
     public async Task AgentStreamAsync(Guid chatId, string message, Action<string> onChunk,
         CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "agent");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "agent/chat");
         request.Headers.Add(HeaderNames.ChatIdHeaderName, chatId.ToString());
         request.Content = JsonContent.Create(new ChatRequest( message));
 
@@ -34,5 +35,14 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
                 onChunk(line);
             }
         }
+    }
+
+    public async Task RemoveChatAsync(Guid chatId)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, "agent/chat");
+        request.Headers.Add(HeaderNames.ChatIdHeaderName, chatId.ToString());
+
+        var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        response.EnsureSuccessStatusCode();
     }
 }

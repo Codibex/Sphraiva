@@ -33,6 +33,14 @@ public class ChatCache
         }
     }
 
+    public void Remove(Guid chatId)
+    {
+        using (_lockObj.EnterScope())
+        {
+            _cache.TryRemove(chatId, out _);
+        }
+    }
+
     public void Cleanup(DateTime threshold)
     {
         using (_lockObj.EnterScope())

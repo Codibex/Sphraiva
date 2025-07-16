@@ -1,14 +1,15 @@
 ﻿@page "/agent"
+@using MCP.WebApp.Client.Services
 
 <PageTitle>Agent</PageTitle>
 
 <div class="main-content d-flex">
-    <MudDynamicTabs @bind-ActivePanelIndex="@_activePanelIndex" AddTab="AddNewChat" 
+    <MudDynamicTabs @bind-ActivePanelIndex="@_activePanelIndex" AddTab="AddChat" CloseTab="RemoveChat"
                     Rounded="false" Position="Position.Right" 
                     Elevation="4" Class="w-100" AddIconClass="btn-secondary">
         @foreach (var chat in _chatsViewModels)
         {
-            <MudTabPanel Text="@chat.DisplayName" ID="@chat.ChatId" ShowCloseIcon="false">
+            <MudTabPanel Text="@chat.DisplayName" ID="@chat.ChatId">
                 <Chat ChatViewModel="@chat" />
             </MudTabPanel>
         }
@@ -21,10 +22,12 @@
     private int _activePanelIndex = 0;
     private readonly IList<ChatViewModel> _chatsViewModels = [];
 
+    [Inject] public required IMcpService McpService { get; set; }
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        AddNewChat();
+        AddChat();
         _stateHasChanged = true;
     }
 
@@ -39,10 +42,22 @@
         StateHasChanged();
     }
 
-    private void AddNewChat()
+    private void AddChat()
     {
         var chat = new ChatViewModel(Guid.NewGuid(), $"Chat {_chatsViewModels.Count + 1}");
         _chatsViewModels.Add(chat);
         _activePanelIndex = _chatsViewModels.Count - 1;
+    }
+
+    private async Task RemoveChat(MudTabPanel panel)
+    {
+        var chat = _chatsViewModels.FirstOrDefault(vm => vm.ChatId == Guid.Parse(panel.ID!.ToString()!));
+        if (chat is null)
+        {
+            return;
+        }
+
+        await McpService.RemoveChatAsync(chat.ChatId);
+        _chatsViewModels.Remove(chat);
     }
 }

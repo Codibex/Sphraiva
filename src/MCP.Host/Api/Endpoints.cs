@@ -45,7 +45,7 @@ public static class Endpoints
             return Results.BadRequest("Function not callable");
         });
 
-        app.MapPost("/agent", async (HeaderValueProvider headerValueProvider, ChatRequest request, IKernelProvider kernelProvider, VectorStoreTextSearch<TextParagraph> textSearchStore, ChatCache chatCache, HttpResponse response, CancellationToken cancellationToken) =>
+        app.MapPost("/agent/chat", async (HeaderValueProvider headerValueProvider, ChatRequest request, IKernelProvider kernelProvider, VectorStoreTextSearch<TextParagraph> textSearchStore, ChatCache chatCache, HttpResponse response, CancellationToken cancellationToken) =>
         {
             response.ContentType = MediaTypeNames.Text.EventStream;
 
@@ -110,6 +110,13 @@ public static class Endpoints
                 // Optionally log or ignore; do not treat as error
             }
         })
+        .AddEndpointFilter<RequireChatIdEndpointFilter>();
+
+        app.MapDelete("/agent/chat", (HeaderValueProvider headerValueProvider, ChatCache chatCache) =>
+            {
+                chatCache.Remove(headerValueProvider.ChatId!.Value);
+                return Results.NoContent();
+            })
         .AddEndpointFilter<RequireChatIdEndpointFilter>();
     }
 }
