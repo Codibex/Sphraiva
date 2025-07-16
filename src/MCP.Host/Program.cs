@@ -1,16 +1,21 @@
 using MCP.Host.Api;
 using MCP.Host.Setup;
+using MCP.Host.Plugins;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddLogging(services => services
-    .AddConsole()
-    .SetMinimumLevel(LogLevel.Trace)
+builder.Services
+    .AddLogging(services => services
+        .AddConsole()
+        .SetMinimumLevel(LogLevel.Trace)
 );
 
 builder.Services
-            .AddSemanticKernel(builder.Configuration)
-            .AddQdrantServices(builder.Configuration);
+    .AddSemanticKernel(builder.Configuration)
+    .AddQdrantServices(builder.Configuration);
+
+builder.Services.AddSingleton<IMcpPluginCache, McpPluginCache>();
+builder.Services.AddHostedService<McpPluginCacheBackgroundService>();
 
 builder.Services.AddOpenApi();
 
