@@ -15,6 +15,6 @@ internal sealed class TextParagraphTextSearchStringMapper : ITextSearchStringMap
         {
             return dataModel.Text;
         }
-        throw new ArgumentException("Invalid result type.");
+        throw new ArgumentException($"Invalid result type. Expected: {typeof(TextParagraph)}, Actual: {result.GetType()}.");
     }
 }
