@@ -59,5 +59,6 @@
 
         await McpService.RemoveChatAsync(chat.ChatId);
         _chatsViewModels.Remove(chat);
+        _activePanelIndex = Math.Max(0, _activePanelIndex - 1);
     }
 }

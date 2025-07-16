@@ -1,7 +1,7 @@
 ﻿@using MCP.WebApp.Client.Services
 <MudPaper Class="pa-4 mx-auto d-flex flex-column chat-container w-100" MaxWidth="1000px" Elevation="4">
     <MudText Typo="Typo.h5" GutterBottom="true">Agent Chat</MudText>
-    <MudPaper id="chat" Class="pa-2 mb-4 chat" Elevation="1">
+    <MudPaper id="chat-@ChatViewModel.ChatId" Class="pa-2 mb-4 chat" Elevation="1">
         @foreach (var message in ChatViewModel.Messages)
         {
             <MudChat ChatPosition="@(message.IsUser ? ChatBubblePosition.End : ChatBubblePosition.Start)"
@@ -91,7 +91,7 @@
         {
             StateHasChanged();
         }
-        await Js.InvokeVoidAsync("scrollToBottom", "chat");
+        await Js.InvokeVoidAsync("scrollToBottom", $"chat-{ChatViewModel.ChatId}");
     }
 
     private void Abort()
