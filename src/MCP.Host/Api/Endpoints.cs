@@ -1,12 +1,13 @@
 ﻿using System.Net.Mime;
 using MCP.Host.Contracts;
 using MCP.Host.Data;
+using MCP.Host.Services;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 using Microsoft.SemanticKernel.Data;
 
-namespace MCP.Host;
+namespace MCP.Host.Api;
 
 public static class Endpoints
 {
@@ -14,23 +15,25 @@ public static class Endpoints
 
     public static void MapEndpoints(this WebApplication app)
     {
-        app.MapPost("/chat", (async (ChatRequest request, Kernel kernel, CancellationToken cancellationToken) =>
+        app.MapPost("/chat", async (ChatRequest request, IKernelProvider kernelProvider, CancellationToken cancellationToken) =>
         {
+            var kernel = kernelProvider.Get();
+
             var settings = new OllamaPromptExecutionSettings
             {
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
                 Temperature = 0,
             };
-            
             var result = await kernel.InvokePromptAsync(request.Message, new KernelArguments(settings), cancellationToken: cancellationToken);
 
             var value = result.GetValue<string>();
 
             return Results.Ok(value);
-        }));
+        });
 
-        app.MapPost("/function-test", (async (Kernel kernel, CancellationToken cancellationToken) =>
+        app.MapPost("/function-test", async (IKernelProvider kernelProvider, CancellationToken cancellationToken) =>
         {
+            var kernel = kernelProvider.Get();
             if (kernel.Plugins.TryGetFunction("Sphraiva", "read_file", out var func))
             {
                 var result = await func.InvokeAsync(new KernelArguments
@@ -41,11 +44,13 @@ public static class Endpoints
             }
 
             return Results.BadRequest("Function not callable");
-        }));
+        });
 
-        app.MapPost("/agent", (async (ChatRequest request, Kernel kernel, VectorStoreTextSearch<TextParagraph> textSearchStore, HttpResponse response, CancellationToken cancellationToken) =>
+        app.MapPost("/agent", async (ChatRequest request, IKernelProvider kernelProvider, VectorStoreTextSearch<TextParagraph> textSearchStore, HttpResponse response, CancellationToken cancellationToken) =>
         {
             response.ContentType = MediaTypeNames.Text.EventStream;
+
+            var kernel = kernelProvider.Get();
 
             ChatCompletionAgent agent =
                 new()
@@ -99,6 +104,6 @@ public static class Endpoints
             {
                 // Optionally log or ignore; do not treat as error
             }
-        }));
+        });
     }
 }
