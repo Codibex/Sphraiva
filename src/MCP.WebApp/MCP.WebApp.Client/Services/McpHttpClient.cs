@@ -37,12 +37,12 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
         }
     }
 
-    public async Task RemoveChatAsync(Guid chatId)
+    public async Task RemoveChatAsync(Guid chatId, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Delete, "agent/chat");
         request.Headers.Add(HeaderNames.ChatIdHeaderName, chatId.ToString());
 
-        var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 }
