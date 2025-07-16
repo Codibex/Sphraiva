@@ -20,6 +20,6 @@ internal class TextParagraph
     public required string Text { get; init; }
 
     /// <summary>The embedding generated from the Text.</summary>
-    [VectorStoreVector(5120)]
+    [VectorStoreVector(4096)]
     public ReadOnlyMemory<float> TextEmbedding { get; set; }
 }
