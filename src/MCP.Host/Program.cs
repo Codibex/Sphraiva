@@ -1,4 +1,5 @@
-using MCP.Host;
+using MCP.Host.Api;
+using MCP.Host.Setup;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,15 +8,14 @@ builder.Services.AddLogging(services => services
     .SetMinimumLevel(LogLevel.Trace)
 );
 
-builder.Services.AddSemanticKernel(builder.Configuration);
+builder.Services
+            .AddSemanticKernel(builder.Configuration)
+            .AddQdrantServices(builder.Configuration);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

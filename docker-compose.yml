@@ -12,6 +12,7 @@ services:
       context: .
       dockerfile: src/MCP.Host/Dockerfile
     environment:
+      - MCP_SERVER=http://sphraiva-mcp-server:8080
       - OLLAMA_SERVER=http://sphraiva-ollama:11434
       - LLM_MODEL=devstral
       - QDRANT_HOST=sphraiva-qdrant
