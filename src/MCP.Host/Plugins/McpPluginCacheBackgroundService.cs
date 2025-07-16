@@ -13,7 +13,12 @@ public class McpPluginCacheBackgroundService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var endpoint = configuration["MCP_SERVER"]!;
+        var endpoint = configuration["MCP_SERVER"];
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            logger.LogError("Configuration value for 'MCP_SERVER' is missing or empty.");
+            return;
+        }
         if (!await WaitForServiceAvailableAsync(endpoint, stoppingToken))
         {
             logger.LogError("MCP Server at {Endpoint} was not available after {Attempts} attempts.", endpoint, MAX_HEALTH_CHECK_ATTEMPTS);
