@@ -2,7 +2,7 @@
 
 ## Semantic Kernel
 
-### 1. Kernel Initialization and Dependency Injection (DI)
+### 1. Kernel Initialization and Dependency Injection (DI) ✅
 
 - **Problem:** You use `Kernel.CreateBuilder()` and build the kernel directly before adding it to DI. Semantic Kernel recommends registering services (embedding generators, chat clients, etc.) via DI and building the kernel in the DI context so all dependencies are resolved correctly.
 - **Recommendation:** Use the new extensions like `services.AddSemanticKernel(...)` (if available) and build the kernel only after all services are registered. This improves testability and flexibility.
