@@ -13,48 +13,48 @@ public static class SemanticKernelRegistration
 {
     public static void AddSemanticKernel(this IServiceCollection services, IConfiguration configuration)
     {
-        var ollamaClient = new OllamaApiClient(new HttpClient
-        {
-            BaseAddress = new Uri(configuration["OLLAMA_SERVER"]!),
-            Timeout = TimeSpan.FromMinutes(5)
-        }, configuration["LLM_MODEL"]!);
-        var kernelBuilder = Kernel.CreateBuilder();
-        kernelBuilder
-            .AddOllamaChatClient(ollamaClient)
-            .AddOllamaChatCompletion(ollamaClient)
-            .AddOllamaTextGeneration(ollamaClient)
-            .AddOllamaEmbeddingGenerator(ollamaClient);
-        //kernelBuilder.Services.AddVectorStoreTextSearch<TextParagraph>();
-        //kernelBuilder.Services.AddSingleton(sp =>
-        //{
-        //    return sp.GetRequiredService<Kernel>().GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
-        //});
-        var kernel = kernelBuilder.Build();
+        services.AddSingleton<OllamaApiClient>(sp =>
+            new OllamaApiClient(new HttpClient
+            {
+                BaseAddress = new Uri(configuration["OLLAMA_SERVER"]!),
+                Timeout = TimeSpan.FromMinutes(5)
+            }, configuration["LLM_MODEL"]!)
+        );
 
-        RegisterMcp(kernel).GetAwaiter().GetResult();
-
-        services.AddSingleton(sp =>
+        services.AddSingleton<QdrantClient>(sp =>
             new QdrantClient(configuration["QDRANT_HOST"]!, int.Parse(configuration["QDRANT_PORT"]!))
         );
-        services.AddSingleton(kernel);
-        services.AddSingleton(ollamaClient);
+
+        services.AddTransient<ITextSearchStringMapper, TextParagraphTextSearchStringMapper>();
+        services.AddTransient<ITextSearchResultMapper, TextParagraphTextSearchResultMapper>();
+
+        services.AddTransient<Kernel>(sp =>
+        {
+            var ollamaClient = sp.GetRequiredService<OllamaApiClient>();
+            var kernelBuilder = Kernel.CreateBuilder();
+            kernelBuilder
+                .AddOllamaChatClient(ollamaClient)
+                .AddOllamaChatCompletion(ollamaClient)
+                .AddOllamaTextGeneration(ollamaClient)
+                .AddOllamaEmbeddingGenerator(ollamaClient);
+            var kernel = kernelBuilder.Build();
+            return kernel;
+        });
+
+        services.AddTransient<IEmbeddingGenerator<string, Embedding<float>>>(sp =>
+            sp.GetRequiredService<Kernel>().GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>());
         services.AddQdrantVectorStore();
-        services.AddSingleton(sp => sp.GetRequiredService<Kernel>().GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>());
-        
+
         services.AddKeyedTransient<VectorStoreTextSearch<TextParagraph>>(null, (sp, obj) =>
         {
-            var stringMapper = new TextParagraphTextSearchStringMapper();// sp.GetService<ITextSearchStringMapper>();
-            var resultMapper = new TextParagraphTextSearchResultMapper();// sp.GetService<ITextSearchResultMapper>();
-
+            var stringMapper = sp.GetRequiredService<ITextSearchStringMapper>();
+            var resultMapper = sp.GetRequiredService<ITextSearchResultMapper>();
             var vectorizedSearch = sp.GetKeyedService<IVectorSearchable<TextParagraph>>(null);
             if (vectorizedSearch is null)
             {
                 throw new InvalidOperationException("No IVectorizedSearch<TextParagraph> registered.");
             }
-
-            var textEmbeddingGenerationService = sp.GetRequiredService<Kernel>()
-                .GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
-
+            var textEmbeddingGenerationService = sp.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
             if (vectorizedSearch is not null && textEmbeddingGenerationService is not null)
             {
                 return new VectorStoreTextSearch<TextParagraph>(
@@ -65,7 +65,7 @@ public static class SemanticKernelRegistration
             }
             throw new InvalidOperationException("No ITextEmbeddingGenerationService registered.");
         });
-        
+
         services.AddQdrantCollection<Guid, TextParagraph>("documents");
     }
 
