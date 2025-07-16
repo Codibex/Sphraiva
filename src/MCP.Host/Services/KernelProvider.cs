@@ -5,9 +5,9 @@ namespace MCP.Host.Services;
 
 public class KernelProvider(Kernel kernel, IMcpPluginCache pluginCache) : IKernelProvider
 {
-    public async Task<Kernel> GetAsync()
+    public Kernel Get()
     {
-        var tools = await pluginCache.GetToolsForPluginAsync(PluginNames.Sphraiva);
+        var tools = pluginCache.GetToolsForPlugin(PluginNames.Sphraiva);
         kernel.Plugins.AddFromFunctions(PluginNames.Sphraiva, tools.Select(t => t.AsKernelFunction()));
         return kernel;
     }

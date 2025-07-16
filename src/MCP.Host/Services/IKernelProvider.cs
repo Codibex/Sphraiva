@@ -4,5 +4,5 @@ namespace MCP.Host.Services;
 
 public interface IKernelProvider
 {
-    Task<Kernel> GetAsync();
+    Kernel Get();
 }

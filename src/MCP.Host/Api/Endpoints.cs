@@ -17,7 +17,7 @@ public static class Endpoints
     {
         app.MapPost("/chat", async (ChatRequest request, IKernelProvider kernelProvider, CancellationToken cancellationToken) =>
         {
-            var kernel = await kernelProvider.GetAsync();
+            var kernel = kernelProvider.Get();
 
             var settings = new OllamaPromptExecutionSettings
             {
@@ -33,7 +33,7 @@ public static class Endpoints
 
         app.MapPost("/function-test", async (IKernelProvider kernelProvider, CancellationToken cancellationToken) =>
         {
-            var kernel = await kernelProvider.GetAsync();
+            var kernel = kernelProvider.Get();
             if (kernel.Plugins.TryGetFunction("Sphraiva", "read_file", out var func))
             {
                 var result = await func.InvokeAsync(new KernelArguments
@@ -50,7 +50,7 @@ public static class Endpoints
         {
             response.ContentType = MediaTypeNames.Text.EventStream;
 
-            var kernel = await kernelProvider.GetAsync();
+            var kernel = kernelProvider.Get();
 
             ChatCompletionAgent agent =
                 new()

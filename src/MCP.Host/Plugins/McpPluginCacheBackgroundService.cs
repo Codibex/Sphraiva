@@ -25,7 +25,7 @@ public class McpPluginCacheBackgroundService(
         // var resources = await mcpClient.ListResourcesAsync().ConfigureAwait(false);
         // var templateResources = await mcpClient.ListResourceTemplatesAsync().ConfigureAwait(false);
 
-        await pluginCache.UpdateToolsForPluginAsync(PluginNames.Sphraiva, tools.AsReadOnly());
+        pluginCache.UpdateToolsForPlugin(PluginNames.Sphraiva, tools.AsReadOnly());
     }
 
     private static async Task<bool> WaitForServiceAvailableAsync(string endpoint, CancellationToken cancellationToken)
