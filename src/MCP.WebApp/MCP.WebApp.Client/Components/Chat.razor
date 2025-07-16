@@ -13,7 +13,7 @@
         }
     </MudPaper>
     <div>
-        <MudTextField @bind-Value="_inputText" Label="Nachricht" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true" Immediate="true"/>
+        <MudTextField @bind-Value="_inputText" Label="Message" Variant="Variant.Outlined" Lines="3" FullWidth="true" AutoFocus="true" Immediate="true"/>
         <MudText>@_errorMessage</MudText>
         <div class="d-flex pb-4">
             <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Send" Disabled="_isLoading || string.IsNullOrWhiteSpace(_inputText)" Class="mt-2">
