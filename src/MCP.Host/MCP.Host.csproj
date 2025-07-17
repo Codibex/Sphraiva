@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MCP.BackgroundWorker.FileSystem.Contracts\MCP.BackgroundWorker.FileSystem.Contracts.csproj" />
     <ProjectReference Include="..\MCP.Host.Contracts\MCP.Host.Contracts.csproj" />
   </ItemGroup>
 

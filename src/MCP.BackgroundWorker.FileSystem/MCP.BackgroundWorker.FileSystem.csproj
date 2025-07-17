@@ -13,4 +13,8 @@
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MCP.BackgroundWorker.FileSystem.Contracts\MCP.BackgroundWorker.FileSystem.Contracts.csproj" />
+  </ItemGroup>
 </Project>

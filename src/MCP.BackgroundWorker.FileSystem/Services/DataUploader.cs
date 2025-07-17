@@ -1,3 +1,4 @@
+using MCP.BackgroundWorker.FileSystem.Contracts;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.VectorData;
 

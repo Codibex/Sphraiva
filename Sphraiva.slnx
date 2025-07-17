@@ -5,6 +5,7 @@
     <File Path="Directory.Packages.props" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/MCP.BackgroundWorker.FileSystem.Contracts/MCP.BackgroundWorker.FileSystem.Contracts.csproj" Id="1c7ce11d-5b9c-4050-bac6-4e47a5f89131" />
     <Project Path="src/MCP.BackgroundWorker.FileSystem/MCP.BackgroundWorker.FileSystem.csproj" Id="6fa186d9-e4c8-4f36-be7c-5d7101567b2c" />
     <Project Path="src/MCP.Host.Contracts/MCP.Host.Contracts.csproj" Id="afb25245-db60-40ff-bc79-0b9ad109ad51" />
     <Project Path="src/MCP.Host/MCP.Host.csproj" Id="39ff53f4-159e-4c34-b94b-f96e7b37ea14" />

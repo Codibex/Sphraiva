@@ -13,6 +13,4 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<Worker>();
         return services;
     }
-
-    
 }

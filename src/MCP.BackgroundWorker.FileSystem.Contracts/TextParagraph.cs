@@ -1,6 +1,6 @@
 using Microsoft.Extensions.VectorData;
 
-namespace MCP.BackgroundWorker.FileSystem;
+namespace MCP.BackgroundWorker.FileSystem.Contracts;
 
 /// <summary>
 /// Represents a paragraph of text extracted from a document, including its metadata and text embedding.
@@ -10,7 +10,7 @@ namespace MCP.BackgroundWorker.FileSystem;
 /// embeddings. It is typically used in scenarios where text needs to be processed or analyzed, such as in vector stores
 /// for machine learning applications.
 /// </remarks>
-internal class TextParagraph
+public class TextParagraph
 {
     /// <summary>
     /// A unique key for the text paragraph.
@@ -21,7 +21,7 @@ internal class TextParagraph
     /// <summary>
     /// An uri that points at the original location of the document containing the text.
     /// </summary>
-    [VectorStoreData]
+    [VectorStoreData(IsFullTextIndexed = true)]
     public required string DocumentUri { get; init; }
 
     /// <summary>
@@ -33,7 +33,7 @@ internal class TextParagraph
     /// <summary>
     /// The text of the paragraph.
     /// </summary>
-    [VectorStoreData]
+    [VectorStoreData(IsFullTextIndexed = true)]
     public required string Text { get; init; }
 
     /// <summary>
