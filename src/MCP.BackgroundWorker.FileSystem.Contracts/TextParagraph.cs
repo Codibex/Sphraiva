@@ -19,7 +19,7 @@ public class TextParagraph
     public required Guid Key { get; init; }
 
     /// <summary>
-    /// An uri that points at the original location of the document containing the text.
+    /// A URI that points at the original location of the document containing the text.
     /// </summary>
     [VectorStoreData(IsFullTextIndexed = true)]
     public required string DocumentUri { get; init; }
