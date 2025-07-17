@@ -1,5 +1,6 @@
 using MCP.WebApp.Client.Services;
 using MCP.WebApp.Components;
+using MudBlazor;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +10,9 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
-builder.Services.AddMudServices();
+builder.Services
+    .AddMudServices()
+    .AddMudMarkdownServices();
 
 builder.Services.AddScoped<IMcpService, McpService>();
 

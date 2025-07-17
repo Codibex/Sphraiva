@@ -27,12 +27,13 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
         response.EnsureSuccessStatusCode();
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var reader = new StreamReader(stream);
-        while (await reader.ReadLineAsync(cancellationToken) is { } line)
+
+        var buffer = new char[8096];
+        int read;
+        while ((read = await reader.ReadAsync(buffer, cancellationToken)) > 0)
         {
-            if (!string.IsNullOrWhiteSpace(line))
-            {
-                onChunk(line);
-            }
+            var content = new ReadOnlySpan<char>(buffer, 0, read);
+            onChunk(content.ToString());
         }
     }
 

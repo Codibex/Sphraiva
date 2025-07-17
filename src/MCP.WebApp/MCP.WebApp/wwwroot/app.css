@@ -31,3 +31,25 @@ div.mud-main-content {
 .w-100 {
     width: 100%;
 }
+
+.mud-markdown-body {
+    .mud-typography-h1 {
+        font-size: 2rem;
+    }
+    .mud-typography-h2 {
+        font-size: 1.5rem;
+    }
+    .mud-typography-h3 {
+        font-size: 1.25rem;
+    }
+    .mud-typography-h4 {
+        font-size: 1rem;
+    }
+    .mud-typography-h5 {
+        font-size: 0.875rem;
+    }
+    .mud-typography-h6 {
+        font-size: 0.85rem;
+    }
+}
+    
