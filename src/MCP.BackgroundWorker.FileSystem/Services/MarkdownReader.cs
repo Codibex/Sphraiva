@@ -1,3 +1,5 @@
+using MCP.BackgroundWorker.FileSystem.Contracts;
+
 namespace MCP.BackgroundWorker.FileSystem.Services;
 
 internal class MarkdownReader
