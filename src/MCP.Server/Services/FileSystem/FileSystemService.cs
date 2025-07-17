@@ -6,20 +6,20 @@ public class FileSystemService : IFileSystemService
 {
     private readonly string _dataDirectory = "../data/";
 
-    public async Task<ReadFileResult> ReadFileAsync(string relativePath)
+    public async Task<ReadFileResult> ReadFileAsync(string fullFilePath)
     {
-        var path = Path.Combine(_dataDirectory, relativePath);
+        var path = Path.Combine(_dataDirectory, fullFilePath);
         if (!File.Exists(path))
         {
-            throw new FileNotFoundException($"File not found: {relativePath}");
+            throw new FileNotFoundException($"File not found: {fullFilePath}");
         }
         var content = await File.ReadAllTextAsync(path);
-        return new ReadFileResult(Path.GetFileName(relativePath), content);
+        return new ReadFileResult(Path.GetFileName(fullFilePath), content);
     }
 
-    public async Task<string> WriteFileAsync(string relativePath, string content)
+    public async Task<string> WriteFileAsync(string fullFilePath, string content)
     {
-        var path = Path.Combine(_dataDirectory, relativePath);
+        var path = Path.Combine(_dataDirectory, fullFilePath);
 
         if (File.Exists(path))
         {
@@ -32,18 +32,18 @@ public class FileSystemService : IFileSystemService
         }
 
         await File.WriteAllTextAsync(path, content);
-        return "File written successfully: " + relativePath;
+        return "File written successfully: " + fullFilePath;
     }
 
-    public string DeleteFile(string relativePath)
+    public string DeleteFile(string fullFilePath)
     {
-        var path = Path.Combine(_dataDirectory, relativePath);
+        var path = Path.Combine(_dataDirectory, fullFilePath);
         if (!File.Exists(path))
         {
-            throw new FileNotFoundException($"File not found: {relativePath}");
+            throw new FileNotFoundException($"File not found: {fullFilePath}");
         }
         File.Delete(path);
-        return $"File deleted successfully: {relativePath}";
+        return $"File deleted successfully: {fullFilePath}";
     }
 
     public ListDirectoryResult ListDirectory(string relativePath)
@@ -81,33 +81,33 @@ public class FileSystemService : IFileSystemService
         return $"Directory deleted successfully: {relativePath}";
     }
 
-    public string MoveFile(string sourceRelativePath, string destRelativePath)
+    public string MoveFile(string sourceFullFilePath, string destinationFullFilePath)
     {
-        var sourcePath = Path.Combine(_dataDirectory, sourceRelativePath);
-        var destPath = Path.Combine(_dataDirectory, destRelativePath);
+        var sourcePath = Path.Combine(_dataDirectory, sourceFullFilePath);
+        var destPath = Path.Combine(_dataDirectory, destinationFullFilePath);
         if (!File.Exists(sourcePath))
         {
-            throw new FileNotFoundException($"File not found: {sourceRelativePath}");
+            throw new FileNotFoundException($"File not found: {sourceFullFilePath}");
         }
         File.Move(sourcePath, destPath, true);
-        return $"File moved successfully: {destRelativePath}";
+        return $"File moved successfully: {destinationFullFilePath}";
     }
 
-    public string CopyFile(string sourceRelativePath, string destRelativePath)
+    public string CopyFile(string sourceFullFilePath, string destinationFullFilePath)
     {
-        var sourcePath = Path.Combine(_dataDirectory, sourceRelativePath);
-        var destPath = Path.Combine(_dataDirectory, destRelativePath);
+        var sourcePath = Path.Combine(_dataDirectory, sourceFullFilePath);
+        var destPath = Path.Combine(_dataDirectory, destinationFullFilePath);
         if (!File.Exists(sourcePath))
         {
-            throw new FileNotFoundException($"File not found: {sourceRelativePath}");
+            throw new FileNotFoundException($"File not found: {sourceFullFilePath}");
         }
         File.Copy(sourcePath, destPath, true);
-        return $"File copied successfully: {destRelativePath}";
+        return $"File copied successfully: {destinationFullFilePath}";
     }
 
-    public StatisticResult GetStatistic(string relativePath)
+    public StatisticResult GetStatistic(string fullPath)
     {
-        var path = Path.Combine(_dataDirectory, relativePath);
+        var path = Path.Combine(_dataDirectory, fullPath);
         if (File.Exists(path))
         {
             var info = new FileInfo(path);
@@ -142,9 +142,9 @@ public class FileSystemService : IFileSystemService
         );
     }
 
-    public ExistsResult Exists(string relativePath)
+    public ExistsResult Exists(string fullPath)
     {
-        var path = Path.Combine(_dataDirectory, relativePath);
+        var path = Path.Combine(_dataDirectory, fullPath);
         var fileExists = File.Exists(path);
         if (fileExists)
         {

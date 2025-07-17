@@ -8,7 +8,10 @@
                      Variant="Variant.Outlined"
                      Color="@(message.IsUser ? Color.Secondary : Color.Primary)">
                 <MudChatHeader Time="@(message.GetTimeString())">@message.User</MudChatHeader>
-                <MudChatBubble>@((MarkupString)EscapeForHtml(message.Text))</MudChatBubble>
+                <MudChatBubble>
+                    <MudMarkdown Value="@message.Text"></MudMarkdown>
+                    @* @((MarkupString)EscapeForHtml(message.Text)) *@
+                </MudChatBubble>
             </MudChat>
         }
     </MudPaper>

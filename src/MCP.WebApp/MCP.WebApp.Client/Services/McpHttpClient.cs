@@ -27,7 +27,7 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
         response.EnsureSuccessStatusCode();
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var reader = new StreamReader(stream);
-        while (await reader.ReadLineAsync(cancellationToken) is { } line)
+        while (await reader.ReadToEndAsync(cancellationToken) is { } line)
         {
             if (!string.IsNullOrWhiteSpace(line))
             {
