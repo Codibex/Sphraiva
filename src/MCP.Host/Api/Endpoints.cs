@@ -93,12 +93,6 @@ public static class Endpoints
                          return current;
                      }, cancellationToken: cancellationToken);
 
-                await foreach (var result in agent.InvokeAsync(request.Message, thread, cancellationToken: cancellationToken))
-                {
-                    var content = result.Message.Content;
-                    await response.WriteAsync(content ?? "No response", cancellationToken);
-                    await response.Body.FlushAsync(cancellationToken);
-                }
                 //return Results.Ok(new
                 //{
                 //    response.Content,
