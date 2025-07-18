@@ -39,6 +39,6 @@ public class TextParagraph
     /// <summary>
     /// The embedding generated from the Text.
     /// </summary>
-    [VectorStoreVector(4096)]
+    [VectorStoreVector(5120)]
     public ReadOnlyMemory<float> TextEmbedding { get; set; }
 }

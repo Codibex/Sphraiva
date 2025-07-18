@@ -81,29 +81,16 @@ public static class Endpoints
 #pragma warning restore SKEXP0130
 #pragma warning restore SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-            var messages = new List<StreamingChatMessageContent>();
-
             try
             {
-                await agent
-                     .InvokeStreamingAsync(request.Message, thread, cancellationToken: cancellationToken)
-                     .AggregateAsync(messages, (current, responseItem) =>
-                     {
-                         current.Add(responseItem.Message);
-                         return current;
-                     }, cancellationToken: cancellationToken);
-
-                await foreach (var result in agent.InvokeAsync(request.Message, thread, cancellationToken: cancellationToken))
+                await foreach (var result in agent
+                                   .InvokeStreamingAsync(request.Message, thread, cancellationToken: cancellationToken))
                 {
-                    var content = result.Message.Content;
-                    await response.WriteAsync(content ?? "No response", cancellationToken);
+                    var content = result.Message.Content ?? string.Empty;
+
+                    await response.WriteAsync(content, cancellationToken);
                     await response.Body.FlushAsync(cancellationToken);
                 }
-                //return Results.Ok(new
-                //{
-                //    response.Content,
-                //    response.Role
-                //});
             }
             catch (TaskCanceledException)
             {
@@ -117,6 +104,70 @@ public static class Endpoints
                 chatCache.Remove(headerValueProvider.ChatId!.Value);
                 return Results.NoContent();
             })
+        .AddEndpointFilter<RequireChatIdEndpointFilter>();
+
+        app.MapPost("/agent/code", async (HeaderValueProvider headerValueProvider, ChatRequest request, IKernelProvider kernelProvider, ChatCache chatCache, HttpResponse response, CancellationToken cancellationToken) =>
+        {
+            var chatId = headerValueProvider.ChatId!.Value;
+            var thread = chatCache.GetOrCreateThread(chatId);
+
+            var kernel = kernelProvider.Get();
+
+            ChatCompletionAgent agent =
+                new()
+                {
+                    Name = "CodingAgent",
+                    Instructions = """
+                                   You are an autonomous coding agent. You are an expert in implementing the requested changes independently, step by step.
+                                   Ask the user if required information is missing.
+                                   
+                                   ## User requirements
+                                   
+                                   The user has to provide the following data:
+                                   1. Instruction name for the docker container creation
+                                   2. A repository name 
+                                   3. A set of requirements for changes.
+                                   
+                                   A pull request creation is not necessary. The user creates the pull request.
+                                   
+                                   ## Necessary steps you have to do
+                                   
+                                   1. Create a development container for the task.
+                                   2. Clone the specified repository.
+                                   3. Create a new branch for the implementation. Use a name that matches the requirement in short.
+                                   4. Analyze the current state of the repository and the user's requirements, and identify the necessary changes.
+                                   5. Create a change plan.
+                                   6. Communicate the change plan to the user and wait for feedback or clarification before proceeding.
+                                   7. If the user provides feedback or additional changes, update the change plan accordingly. Once everything is confirmed and clear, start implementing the changes step by step.
+                                   8. Build the solution to check if the made changes are correct. Otherwise fix the build issues.
+                                   9. Commit the changes with meaningful commit messages.
+                                   10. Push the branch to the remote repository.
+                                   11. After completion, clean up and remove the development container.
+                                   """,
+                    Kernel = kernel,
+                    Arguments = new KernelArguments(
+                        new OllamaPromptExecutionSettings
+                        {
+                            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
+                        })
+                };
+
+            try
+            {
+                await foreach (var result in agent
+                                   .InvokeStreamingAsync(request.Message, thread, cancellationToken: cancellationToken))
+                {
+                    var content = result.Message.Content ?? string.Empty;
+
+                    await response.WriteAsync(content, cancellationToken);
+                    await response.Body.FlushAsync(cancellationToken);
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // Optionally log or ignore; do not treat as error
+            }
+        })
         .AddEndpointFilter<RequireChatIdEndpointFilter>();
     }
 }

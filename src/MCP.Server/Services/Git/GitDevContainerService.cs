@@ -7,9 +7,9 @@ public class GitDevContainerService(IDevContainerService devContainerService) : 
 {
     private const int MAX_COMMIT_LENGTH = 2048;
     
-    public async Task<string> CloneRepositoryInDevContainerAsync(string containerName, string repository, CancellationToken cancellationToken)
+    public async Task<string> CloneRepositoryInDevContainerAsync(string containerName, string repositoryName, CancellationToken cancellationToken)
     {
-        var safeRepo = SanitizeInput(repository);
+        var safeRepo = SanitizeInput(repositoryName);
         var command = $"gh repo clone {safeRepo}";
         return await devContainerService.RunCommandInContainerAsync(containerName, command, cancellationToken);
     }
