@@ -13,6 +13,7 @@
     <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" />
+    <PackageReference Include="Microsoft.SemanticKernel.Process.Core" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>
