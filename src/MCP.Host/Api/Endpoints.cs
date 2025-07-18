@@ -81,23 +81,16 @@ public static class Endpoints
 #pragma warning restore SKEXP0130
 #pragma warning restore SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-            var messages = new List<StreamingChatMessageContent>();
-
             try
             {
-                await agent
-                     .InvokeStreamingAsync(request.Message, thread, cancellationToken: cancellationToken)
-                     .AggregateAsync(messages, (current, responseItem) =>
-                     {
-                         current.Add(responseItem.Message);
-                         return current;
-                     }, cancellationToken: cancellationToken);
+                await foreach (var result in agent
+                                   .InvokeStreamingAsync(request.Message, thread, cancellationToken: cancellationToken))
+                {
+                    var content = result.Message.Content ?? string.Empty;
 
-                //return Results.Ok(new
-                //{
-                //    response.Content,
-                //    response.Role
-                //});
+                    await response.WriteAsync(content, cancellationToken);
+                    await response.Body.FlushAsync(cancellationToken);
+                }
             }
             catch (TaskCanceledException)
             {
@@ -115,8 +108,6 @@ public static class Endpoints
 
         app.MapPost("/agent/code", async (HeaderValueProvider headerValueProvider, ChatRequest request, IKernelProvider kernelProvider, VectorStoreTextSearch<TextParagraph> textSearchStore, ChatCache chatCache, HttpResponse response, CancellationToken cancellationToken) =>
         {
-            response.ContentType = MediaTypeNames.Text.EventStream;
-
             var chatId = headerValueProvider.ChatId!.Value;
             var thread = chatCache.GetOrCreateThread(chatId);
 
@@ -127,19 +118,28 @@ public static class Endpoints
                 {
                     Name = "CodingAgent",
                     Instructions = """
-                        You are an autonomous coding agent. When the user describes a task, you must independently:
-                        1. Create a development container for the task.
-                        2. Clone the specified repository.
-                        3. Create a new branch for the implementation.
-                        4. Plan the required changes and communicate your plan. If you need more information, ask the user for clarification before proceeding with the implementation.
-                        5. Apply the changes step by step.
-                        6. For each change, log the action, affected files, and provide a git diff as a status update.
-                        7. Commit the changes with meaningful commit messages.
-                        8. Push the branch to the remote repository.
-                        9. After completion, clean up and remove the development container.
-                        10. Send status updates and error messages to the user throughout the process.
-                        Do not create a pull request. Always use markdown for code and diffs in your status updates.
-                    """,
+                                   You are an autonomous coding agent. Always consider the previous chat history and continue the workflow from the last completed step. 
+                                   If you have already collected information, proceed to the next logical step in the process. 
+                                   Only ask the user for missing information if required, and wait for their response before continuing. 
+                                   After each step, send a status update and wait for user confirmation before proceeding. 
+                                   If an error occurs, report it and wait for further instructions.
+                                   
+                                   When the user describes a task, proceed step by step as follows:
+                                   1. Check if you have all needed information for the next steps. 
+                                      If you need information for the next steps, ask the user and wait for a response before continuing.
+                                   2. Create a development container for the task. 
+                                      Use the instruction name provided by the user to determine the container image.
+                                   3. Clone the specified repository.
+                                   4. Create a new branch for the implementation.
+                                   5. Analyze the current state of the repository and the user's requirement. 
+                                      Based on both, create a detailed plan for the required changes. 
+                                      Communicate this plan to the user and wait for feedback or clarification before proceeding.
+                                   6. Apply the changes step by step. After each change, log the action, affected files, and provide a git diff as a status update.
+                                   7. Commit the changes with meaningful commit messages.
+                                   8. Push the branch to the remote repository.
+                                   9. After completion, clean up and remove the development container.
+                                   10. After each step, send a status update to the user. If an error occurs, report it and wait for further instructions.
+                                   """,
                     Kernel = kernel,
                     Arguments = new KernelArguments(
                         new OllamaPromptExecutionSettings
@@ -156,22 +156,14 @@ public static class Endpoints
 #pragma warning restore SKEXP0130
 #pragma warning restore SKEXP0110 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-            var messages = new List<StreamingChatMessageContent>();
-
             try
             {
-                await agent
-                     .InvokeStreamingAsync(request.Message, thread, cancellationToken: cancellationToken)
-                     .AggregateAsync(messages, (current, responseItem) =>
-                     {
-                         current.Add(responseItem.Message);
-                         return current;
-                     }, cancellationToken: cancellationToken);
-
-                await foreach (var result in agent.InvokeAsync(request.Message, thread, cancellationToken: cancellationToken))
+                await foreach (var result in agent
+                                   .InvokeStreamingAsync(request.Message, thread, cancellationToken: cancellationToken))
                 {
-                    var content = result.Message.Content;
-                    await response.WriteAsync(content ?? "No response", cancellationToken);
+                    var content = result.Message.Content ?? string.Empty;
+
+                    await response.WriteAsync(content, cancellationToken);
                     await response.Body.FlushAsync(cancellationToken);
                 }
             }
