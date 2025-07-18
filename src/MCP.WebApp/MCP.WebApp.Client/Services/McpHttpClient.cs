@@ -37,6 +37,18 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
         }
     }
 
+    public async Task CodeAgentStreamAsync(Guid chatId, string message, Action<string> onChunk, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "agent/code");
+        request.Headers.Add(HeaderNames.ChatIdHeaderName, chatId.ToString());
+        request.Content = JsonContent.Create(new ChatRequest(message));
+
+        var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadAsStringAsync(cancellationToken);
+        onChunk(result);
+    }
+
     public async Task RemoveChatAsync(Guid chatId, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Delete, "agent/chat");

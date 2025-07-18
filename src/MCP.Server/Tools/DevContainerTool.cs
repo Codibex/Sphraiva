@@ -13,7 +13,7 @@ namespace MCP.Server.Tools;
 public class DevContainerTool(IDevContainerService devContainerService)
 {
     [McpServerTool(Title = "Create development container", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
-    public async Task<string> CreateDevContainerAsync(string instructionName) 
+    public async Task<string> CreateDevContainerAsync([Description("The instruction name specifies which Docker image to use for the development container.")] string instructionName) 
         => await devContainerService.CreateDevContainerAsync(instructionName);
 
     [McpServerTool(Title = "Cleanup development container", Destructive = true, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
