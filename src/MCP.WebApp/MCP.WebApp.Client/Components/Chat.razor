@@ -62,12 +62,12 @@
         var input = _inputText;
         _inputText = string.Empty;
 
-        await AddMessage(ChatMessageViewModel.CreateUserMessage(input));
+        await AddMessageAsync(ChatMessageViewModel.CreateUserMessage(input));
 
         try
         {
             var agentMsg = ChatMessageViewModel.CreateAgentMessage(string.Empty);
-            await AddMessage(agentMsg, true);
+            await AddMessageAsync(agentMsg, true);
             await McpService.AgentStreamAsync(ChatViewModel.ChatId, input, chunk =>
             {
                 agentMsg.Text += chunk;
@@ -84,7 +84,7 @@
         }
     }
 
-    private async Task AddMessage(ChatMessageViewModel messageViewModel, bool callStateHasChanged = false)
+    private async Task AddMessageAsync(ChatMessageViewModel messageViewModel, bool callStateHasChanged = false)
     {
         ChatViewModel.Messages.Add(messageViewModel);
         await ScrollToBottom(callStateHasChanged);
