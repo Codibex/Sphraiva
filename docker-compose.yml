@@ -14,7 +14,7 @@ services:
     environment:
       - MCP_SERVER=http://sphraiva-mcp-server:8080
       - OLLAMA_SERVER=http://sphraiva-ollama:11434
-      - LLM_MODEL=interstellarninja/llama3.1-8b-tools
+      - LLM_MODEL=devstral
       - QDRANT_HOST=sphraiva-qdrant
       - QDRANT_PORT=6334
 
@@ -33,7 +33,7 @@ services:
       dockerfile: src/MCP.BackgroundWorker.FileSystem/Dockerfile
     environment:
       - OLLAMA_SERVER=http://sphraiva-ollama:11434
-      - LLM_MODEL=interstellarninja/llama3.1-8b-tools
+      - LLM_MODEL=devstral
       - QDRANT_HOST=sphraiva-qdrant
       - QDRANT_PORT=6334
 
@@ -46,7 +46,7 @@ services:
     volumes:
       - ollama-models:/root/.ollama
     environment:
-      - OLLAMA_MODEL=interstellarninja/llama3.1-8b-tools
+      - OLLAMA_MODEL=devstral
       - OLLAMA_API_PORT=11434
       - OLLAMA_CONTEXT_LENGTH=20480
     deploy:
