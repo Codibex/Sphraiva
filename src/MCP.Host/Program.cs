@@ -1,10 +1,12 @@
-using System.Net.Mime;
 using MCP.Host.Api;
-using MCP.Host.Setup;
-using MCP.Host.Plugins;
 using MCP.Host.Chat;
 using MCP.Host.Hubs;
+using MCP.Host.Plugins;
+using MCP.Host.Services;
+using MCP.Host.Setup;
 using Microsoft.AspNetCore.ResponseCompression;
+using System.Net.Mime;
+using System.Threading.Channels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +34,10 @@ builder.Services.AddResponseCompression(options =>
 {
     options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat([MediaTypeNames.Application.Octet]);
 });
+
+builder.Services.AddTransient<CodeAgentProcess>();
+builder.Services.AddHostedService<CodeAgentBackgroundService>();
+builder.Services.AddSingleton(Channel.CreateUnbounded<CodeAgentImplementationTask>());
 
 var app = builder.Build();
 

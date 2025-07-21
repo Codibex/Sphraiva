@@ -90,7 +90,7 @@
         {
             var agentMsg = ChatMessageViewModel.CreateAgentMessage(string.Empty);
             await AddMessage(agentMsg, true);
-            await McpService.CodeAgentStreamAsync(ChatViewModel.ChatId, input, chunk =>
+            await McpService.CodeAgentStreamAsync(ChatViewModel.ChatId, _hubConnection!.ConnectionId!, input, chunk =>
             {
                 agentMsg.Text += chunk;
                 _ = ScrollToBottom(true);

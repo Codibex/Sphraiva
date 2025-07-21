@@ -9,9 +9,8 @@ using Microsoft.SemanticKernel.Agents.Chat;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Net.Mime;
 using System.Text.Json;
+using System.Threading.Channels;
 using MCP.Host.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.SemanticKernel.Connectors.Ollama;
@@ -70,71 +69,74 @@ public static class CodingAgentEndpoints
     {
         app.MapPost("/agent/workflow", 
                 async (
-                    HeaderValueProvider headerValueProvider, 
-                    ChatRequest request, 
+                    HeaderValueProvider headerValueProvider,
+                    CodeAgentImplementationRequest request, 
                     IKernelProvider kernelProvider, 
                     IMcpPluginCache pluginCache, 
                     ChatCache chatCache, 
                     IHubContext<CodeAgentHub, ICodeAgentHub> hubContext, 
+                    Channel<CodeAgentImplementationTask> channel,
                     HttpResponse response, CancellationToken cancellationToken) =>
                 {
+                    channel.Writer.TryWrite(new CodeAgentImplementationTask(request.ConnectionId, request.Requirement));
+                    await Task.CompletedTask;
             // Create the process builder
-            ProcessBuilder processBuilder = new("DocumentationGeneration");
+            //ProcessBuilder processBuilder = new("DocumentationGeneration");
 
-            // Add the steps
-            var infoGatheringStep = processBuilder.AddStepFromType<GatherProductInfoStep>();
-            var docsGenerationStep = processBuilder.AddStepFromType<GenerateDocumentationStep>();
-            var docsProofreadStep = processBuilder.AddStepFromType<ProofreadStep>();
-            var docsPublishStep = processBuilder.AddStepFromType<PublishDocumentationStep>();
+            //// Add the steps
+            //var infoGatheringStep = processBuilder.AddStepFromType<GatherProductInfoStep>();
+            //var docsGenerationStep = processBuilder.AddStepFromType<GenerateDocumentationStep>();
+            //var docsProofreadStep = processBuilder.AddStepFromType<ProofreadStep>();
+            //var docsPublishStep = processBuilder.AddStepFromType<PublishDocumentationStep>();
 
-            var proxyStep = processBuilder.AddProxyStep("workflowProxy", ["RequestUserReview", "PublishDocumentation"]);
+            //var proxyStep = processBuilder.AddProxyStep("workflowProxy", ["RequestUserReview", "PublishDocumentation"]);
 
-            // Orchestrate the events
-            processBuilder
-                .OnInputEvent("StartDocumentation")
-                .SendEventTo(new(infoGatheringStep));
+            //// Orchestrate the events
+            //processBuilder
+            //    .OnInputEvent("StartDocumentation")
+            //    .SendEventTo(new(infoGatheringStep));
 
-            processBuilder
-                .OnInputEvent("UserRejectedDocument")
-                .SendEventTo(new(docsGenerationStep, functionName: "ApplySuggestions"));
+            //processBuilder
+            //    .OnInputEvent("UserRejectedDocument")
+            //    .SendEventTo(new(docsGenerationStep, functionName: "ApplySuggestions"));
 
-            processBuilder
-                .OnInputEvent("UserApprovedDocument")
-                .SendEventTo(new(docsPublishStep, parameterName: "userApproval"));
+            //processBuilder
+            //    .OnInputEvent("UserApprovedDocument")
+            //    .SendEventTo(new(docsPublishStep, parameterName: "userApproval"));
 
-            infoGatheringStep
-                .OnFunctionResult()
-                .SendEventTo(new ProcessFunctionTargetBuilder(docsGenerationStep, functionName: "GenerateDocumentation"));
+            //infoGatheringStep
+            //    .OnFunctionResult()
+            //    .SendEventTo(new ProcessFunctionTargetBuilder(docsGenerationStep, functionName: "GenerateDocumentation"));
 
-            docsGenerationStep
-                .OnEvent("DocumentationGenerated")
-                .SendEventTo(new ProcessFunctionTargetBuilder(docsProofreadStep));
+            //docsGenerationStep
+            //    .OnEvent("DocumentationGenerated")
+            //    .SendEventTo(new ProcessFunctionTargetBuilder(docsProofreadStep));
 
-            docsProofreadStep
-                .OnEvent("DocumentationRejected")
-                .SendEventTo(new ProcessFunctionTargetBuilder(docsGenerationStep, functionName: "ApplySuggestions"));
+            //docsProofreadStep
+            //    .OnEvent("DocumentationRejected")
+            //    .SendEventTo(new ProcessFunctionTargetBuilder(docsGenerationStep, functionName: "ApplySuggestions"));
 
-            docsProofreadStep
-                .OnEvent("DocumentationApproved")
-                .EmitExternalEvent(proxyStep, "RequestUserReview")
-                .SendEventTo(new ProcessFunctionTargetBuilder(docsPublishStep));
+            //docsProofreadStep
+            //    .OnEvent("DocumentationApproved")
+            //    .EmitExternalEvent(proxyStep, "RequestUserReview")
+            //    .SendEventTo(new ProcessFunctionTargetBuilder(docsPublishStep));
 
-            docsPublishStep
-                .OnFunctionResult()
-                .EmitExternalEvent(proxyStep, "PublishDocumentation");
+            //docsPublishStep
+            //    .OnFunctionResult()
+            //    .EmitExternalEvent(proxyStep, "PublishDocumentation");
 
-            var kernel = kernelProvider.Get();
-            IExternalKernelProcessMessageChannel myExternalMessageChannel = new MyCloudEventClient(hubContext);
+            //var kernel = kernelProvider.Get();
+            //IExternalKernelProcessMessageChannel myExternalMessageChannel = new MyCloudEventClient(hubContext);
 
-            // Build and run the process
-            var process = processBuilder.Build();
-            await process.StartAsync(kernel,
-                new KernelProcessEvent
-                {
-                    Id = "StartDocumentation",
-                    Data = "Contoso GlowBrew"
-                },
-                myExternalMessageChannel);
+            //// Build and run the process
+            //var process = processBuilder.Build();
+            //await process.StartAsync(kernel,
+            //    new KernelProcessEvent
+            //    {
+            //        Id = "StartDocumentation",
+            //        Data = "Contoso GlowBrew"
+            //    },
+            //    myExternalMessageChannel);
 
             return Results.Ok("Task accepted");
             //            response.ContentType = MediaTypeNames.Text.EventStream;
@@ -476,83 +478,4 @@ public class ProofreadStep : KernelProcessStep
         [Description("A lis of suggestions, may be empty if there no suggestions for improvement.")]
         public List<string> Suggestions { get; set; } = new();
     }
-}
-
-public class MyCloudEventClient(IHubContext<CodeAgentHub, ICodeAgentHub> hubContext) : IExternalKernelProcessMessageChannel
-{
-    //private MyCustomClient? _customClient;
-
-    // Example of an implementation for the process
-    public ValueTask Initialize()
-    {
-        return ValueTask.CompletedTask;
-    }
-
-    public ValueTask Uninitialize()
-    {
-        return ValueTask.CompletedTask;
-    }
-
-    public async Task EmitExternalEventAsync(string externalTopicEvent, KernelProcessProxyMessage message)
-    {
-        switch (externalTopicEvent)
-        {
-            case "RequestUserReview": 
-                var requestDocument = message.EventData?.Content;
-                if(requestDocument != null)
-                {
-                    await hubContext.Clients.All.ReceiveUserReviewAsync(requestDocument);
-                }
-
-                break;
-            case "PublishDocumentation":
-                var publishedDocument = message.EventData?.Content;
-                if (publishedDocument != null)
-                {
-                    await hubContext.Clients.All.ReceiveUserReviewAsync(publishedDocument);
-                    // As an example only writing the request document to the response
-                    //await response.WriteAsync($"Requesting user review for document: {publishedDocument}");
-                    //await response.Body.FlushAsync();
-                }
-
-                break;
-        }
-
-        //// logic used for emitting messages externally.
-        //// Since all topics are received here potentially 
-        //// some if else/switch logic is needed to map correctly topics with external APIs/endpoints.
-        //if (this._customClient != null)
-        //{
-        //    switch (externalTopicEvent)
-        //    {
-        //        case "RequestUserReview":
-        //            var requestDocument = message.EventData.ToObject() as DocumentInfo;
-        //            // As an example only invoking a sample of a custom client with a different endpoint/api route
-        //            this._customClient.InvokeAsync("REQUEST_USER_REVIEW", requestDocument);
-        //            return;
-
-        //        case "PublishDocumentation":
-        //            var publishedDocument = message.EventData.ToObject() as DocumentInfo;
-        //            // As an example only invoking a sample of a custom client with a different endpoint/api route
-        //            this._customClient.InvokeAsync("PUBLISH_DOC_EXTERNALLY", publishedDocument);
-        //            return;
-        //    }
-        //}
-    }
-
-    //public async ValueTask Initialize()
-    //{
-    //    // logic needed to initialize proxy step, can be used to initialize custom client
-    //    this._customClient = new MyCustomClient("http://localhost:8080");
-    //    this._customClient.Initialize();
-    //}
-
-    //public async ValueTask Uninitialize()
-    //{
-    //    // Cleanup to be executed when proxy step is uninitialized
-    //    if (this._customClient != null)
-    //    {
-    //        await this._customClient.ShutdownAsync();
-    //    }
-    //}
 }
