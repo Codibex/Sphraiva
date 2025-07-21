@@ -1,5 +1,6 @@
 @using MCP.WebApp.Client.Services;
 @using MCP.WebApp.Client.Components;
+@using Microsoft.AspNetCore.SignalR.Client
 <MudPaper Class="pa-4 mx-auto d-flex flex-column chat-container w-100" MaxWidth="1000px" Elevation="4">
     <MudText Typo="Typo.h5" GutterBottom="true">Code Agent</MudText>
     <MudPaper id="@Id" Class="pa-2 mb-4 chat" Elevation="1">
@@ -43,10 +44,32 @@
     [Inject] public required IJSRuntime Js { get; set; }
     [Inject] public required IMcpService McpService { get; set; }
 
+    private HubConnection? _hubConnection;
+
     [Parameter]
     public required CodeAgentViewModel ChatViewModel { get; set; }
 
     private string Id => $"codeagent-{ChatViewModel.ChatId}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl("http://sphraiva-mcp-host:8080/codeAgentHub")
+            .WithAutomaticReconnect()
+            .WithServerTimeout(TimeSpan.FromMinutes(10))
+            .Build();
+
+        _hubConnection.On<string>("ReceiveUserReviewAsync", async (document) =>
+        {
+            var agentMsg = ChatMessageViewModel.CreateAgentMessage(document);
+            await AddMessage(agentMsg, false);
+            await InvokeAsync(StateHasChanged);
+        });
+
+        await _hubConnection.StartAsync();
+    }
 
     private async Task Send()
     {

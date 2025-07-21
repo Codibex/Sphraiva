@@ -42,7 +42,7 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
         using var request = new HttpRequestMessage(HttpMethod.Post, "agent/workflow");
         request.Headers.Add(HeaderNames.ChatIdHeaderName, chatId.ToString());
         request.Content = JsonContent.Create(new ChatRequest(message));
-
+        httpClient.Timeout = TimeSpan.FromMinutes(10);
         var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadAsStringAsync(cancellationToken);

@@ -17,7 +17,7 @@ public static class ServiceCollectionExtensions
             new OllamaApiClient(new HttpClient
             {
                 BaseAddress = new Uri(configuration["OLLAMA_SERVER"] ?? throw new InvalidOperationException("Configuration key 'OLLAMA_SERVER' is missing or null.")),
-                Timeout = TimeSpan.FromMinutes(5)
+                Timeout = TimeSpan.FromMinutes(20)
             }, string.IsNullOrWhiteSpace(configuration["LLM_MODEL"]) 
                 ? throw new ArgumentException("The configuration value for 'LLM_MODEL' is missing or empty.") 
                 : configuration["LLM_MODEL"]!)

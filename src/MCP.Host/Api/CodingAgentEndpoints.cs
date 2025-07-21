@@ -12,6 +12,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Net.Mime;
 using System.Text.Json;
+using MCP.Host.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 using static MCP.Host.Api.GenerateDocumentationStep;
 
@@ -66,10 +68,16 @@ public static class CodingAgentEndpoints
 #pragma warning disable SKEXP0080
     public static void MapCodingAgentEndpoints(this WebApplication app)
     {
-        app.MapPost("/agent/workflow", async (HeaderValueProvider headerValueProvider, ChatRequest request, IKernelProvider kernelProvider, IMcpPluginCache pluginCache, ChatCache chatCache, HttpResponse response, CancellationToken cancellationToken) =>
-        {
-            response.ContentType = MediaTypeNames.Text.EventStream;
-
+        app.MapPost("/agent/workflow", 
+                async (
+                    HeaderValueProvider headerValueProvider, 
+                    ChatRequest request, 
+                    IKernelProvider kernelProvider, 
+                    IMcpPluginCache pluginCache, 
+                    ChatCache chatCache, 
+                    IHubContext<CodeAgentHub, ICodeAgentHub> hubContext, 
+                    HttpResponse response, CancellationToken cancellationToken) =>
+                {
             // Create the process builder
             ProcessBuilder processBuilder = new("DocumentationGeneration");
 
@@ -116,7 +124,7 @@ public static class CodingAgentEndpoints
                 .EmitExternalEvent(proxyStep, "PublishDocumentation");
 
             var kernel = kernelProvider.Get();
-            IExternalKernelProcessMessageChannel myExternalMessageChannel = new MyCloudEventClient(response);
+            IExternalKernelProcessMessageChannel myExternalMessageChannel = new MyCloudEventClient(hubContext);
 
             // Build and run the process
             var process = processBuilder.Build();
@@ -128,6 +136,7 @@ public static class CodingAgentEndpoints
                 },
                 myExternalMessageChannel);
 
+            return Results.Ok("Task accepted");
             //            response.ContentType = MediaTypeNames.Text.EventStream;
 
             //            var chatId = headerValueProvider.ChatId!.Value;
@@ -178,7 +187,7 @@ public static class CodingAgentEndpoints
             //            .StopProcess();
             //    }
             //}
-        })
+                })
         .AddEndpointFilter<RequireChatIdEndpointFilter>();
     }
 
@@ -469,7 +478,7 @@ public class ProofreadStep : KernelProcessStep
     }
 }
 
-public class MyCloudEventClient(HttpResponse response) : IExternalKernelProcessMessageChannel
+public class MyCloudEventClient(IHubContext<CodeAgentHub, ICodeAgentHub> hubContext) : IExternalKernelProcessMessageChannel
 {
     //private MyCustomClient? _customClient;
 
@@ -489,22 +498,21 @@ public class MyCloudEventClient(HttpResponse response) : IExternalKernelProcessM
         switch (externalTopicEvent)
         {
             case "RequestUserReview": 
-                var requestDocument = message.EventData?.ToObject() as DocumentInfo;
+                var requestDocument = message.EventData?.Content;
                 if(requestDocument != null)
                 {
-                    // As an example only writing the request document to the response
-                    await response.WriteAsync($"Requesting user review for document: {requestDocument}"); 
-                    await response.Body.FlushAsync();
+                    await hubContext.Clients.All.ReceiveUserReviewAsync(requestDocument);
                 }
 
                 break;
             case "PublishDocumentation":
-                var publishedDocument = message.EventData?.ToObject() as DocumentInfo;
+                var publishedDocument = message.EventData?.Content;
                 if (publishedDocument != null)
                 {
+                    await hubContext.Clients.All.ReceiveUserReviewAsync(publishedDocument);
                     // As an example only writing the request document to the response
-                    await response.WriteAsync($"Requesting user review for document: {publishedDocument}");
-                    await response.Body.FlushAsync();
+                    //await response.WriteAsync($"Requesting user review for document: {publishedDocument}");
+                    //await response.Body.FlushAsync();
                 }
 
                 break;
