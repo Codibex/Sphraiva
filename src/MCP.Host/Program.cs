@@ -36,4 +36,5 @@ app.UseMiddleware<HeaderValueProviderMiddleware>();
 //app.UseHttpsRedirection();
 
 app.MapEndpoints();
+app.MapCodingAgentEndpoints();
 app.Run();

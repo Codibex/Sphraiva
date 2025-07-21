@@ -39,7 +39,7 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
 
     public async Task CodeAgentStreamAsync(Guid chatId, string message, Action<string> onChunk, CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "agent/code");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "agent/workflow");
         request.Headers.Add(HeaderNames.ChatIdHeaderName, chatId.ToString());
         request.Content = JsonContent.Create(new ChatRequest(message));
 
