@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using System.Text.Json;
-using MCP.Host.Api;
 using MCP.Host.Hubs;
 using MCP.Host.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -14,6 +13,10 @@ namespace MCP.Host.Agents;
 #pragma warning disable SKEXP0080
 public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<CodeAgentHub, ICodeAgentHub> hubContext)
 {
+    private KernelProcess? _process;
+    private Kernel? _kernel;
+    private IExternalKernelProcessMessageChannel? _processMessageChannel;
+
     public async Task RunAsync(CodingAgentImplementationTask implementationTask, CancellationToken cancellationToken)
     {
 
@@ -36,10 +39,12 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Code
             .OnInputEvent("UserRejectedDocument")
             .SendEventTo(new(docsGenerationStep, functionName: "ApplySuggestions"));
 
+        // When external human approval event comes in, route it to the 'isApproved' parameter of the docsPublishStep
         processBuilder
             .OnInputEvent("UserApprovedDocument")
             .SendEventTo(new(docsPublishStep, parameterName: "userApproval"));
 
+        // Hooking up the rest of the process steps
         infoGatheringStep
             .OnFunctionResult()
             .SendEventTo(new ProcessFunctionTargetBuilder(docsGenerationStep, functionName: "GenerateDocumentation"));
@@ -52,26 +57,64 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Code
             .OnEvent("DocumentationRejected")
             .SendEventTo(new ProcessFunctionTargetBuilder(docsGenerationStep, functionName: "ApplySuggestions"));
 
+        // When the proofreader approves the documentation, send it to the 'document' parameter of the docsPublishStep
+        // Additionally, the generated document is emitted externally for user approval using the pre-configured proxyStep
         docsProofreadStep
             .OnEvent("DocumentationApproved")
             .EmitExternalEvent(proxyStep, "RequestUserReview")
-            .SendEventTo(new ProcessFunctionTargetBuilder(docsPublishStep));
-
+            .SendEventTo(new ProcessFunctionTargetBuilder(docsPublishStep, parameterName: "document"));
+        
+        // When event is approved by user, it gets published externally too
         docsPublishStep
             .OnFunctionResult()
-            .EmitExternalEvent(proxyStep, "PublishDocumentation");
+            .EmitExternalEvent(proxyStep, "PublishDocumentation")
+            .StopProcess();
 
-        var kernel = kernelProvider.Get();
-        IExternalKernelProcessMessageChannel myExternalMessageChannel = new CodingAgentProcessMessageChannel(implementationTask.ConnectionId, hubContext);
+        _kernel = kernelProvider.Get();
+        _processMessageChannel = new CodingAgentProcessMessageChannel(implementationTask.ConnectionId, hubContext);
 
-        var process = processBuilder.Build();
-        await process.StartAsync(kernel,
+        _process = processBuilder.Build();
+        await _process.StartAsync(_kernel,
             new KernelProcessEvent
             {
                 Id = "StartDocumentation",
                 Data = "Contoso GlowBrew"
             },
-            myExternalMessageChannel);
+            _processMessageChannel);
+
+        try
+        {
+            await _process.StartAsync(_kernel,
+                new KernelProcessEvent
+                {
+                    Id = "UserApprovedDocument",
+                    Data = true
+                });
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+       
+    }
+
+    public async Task UserApprovedDocumentAsync(bool approved)
+    {
+        if (_process is null || _kernel is null || _processMessageChannel is null)
+        {
+            return;
+        }
+        
+
+        // Implement any cleanup logic if necessary
+        await _process.StartAsync(_kernel,
+            new KernelProcessEvent
+            {
+                Id = "UserApprovedDocument",
+                Data = approved
+            },
+            _processMessageChannel);
     }
 }
 
@@ -136,9 +179,11 @@ public class GenerateDocumentationStep : KernelProcessStep<GeneratedDocumentatio
 
         // Get a response from the LLM
         IChatCompletionService chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
-        var generatedDocumentationResponse = await chatCompletionService.GetChatMessageContentAsync(this._state.ChatHistory!);
+        //var generatedDocumentationResponse = await chatCompletionService.GetChatMessageContentAsync(this._state.ChatHistory!);
 
-        await context.EmitEventAsync("DocumentationGenerated", generatedDocumentationResponse.Content!.ToString());
+        //await context.EmitEventAsync("DocumentationGenerated", generatedDocumentationResponse.Content!.ToString());
+        var generatedDocumentationResponse = "foo";
+        await context.EmitEventAsync("DocumentationGenerated", generatedDocumentationResponse);
     }
 
     [KernelFunction]
@@ -166,14 +211,18 @@ public class GenerateDocumentationStep : KernelProcessStep<GeneratedDocumentatio
 public class PublishDocumentationStep : KernelProcessStep
 {
     [KernelFunction]
-    public DocumentInfo PublishDocumentation(DocumentInfo document, bool userApproval)
+    public DocumentInfo PublishDocumentation(string document, bool userApproval)
     {
-        if (userApproval)
+        //if (userApproval)
         // For example purposes we just write the generated docs to the console
         {
-            Console.WriteLine($"[{nameof(PublishDocumentationStep)}]:\tPublishing product documentation approved by user: \n{document.Title}\n{document.Content}");
+            Console.WriteLine($"[{nameof(PublishDocumentationStep)}]:\tPublishing product documentation approved by user: \n{document}");
         }
-        return document;
+
+        return new DocumentInfo
+        {
+            Content = "asdfj"
+        };
     }
 }
 
@@ -189,7 +238,7 @@ public class DocumentInfo
 public class ProofreadStep : KernelProcessStep
 {
     [KernelFunction]
-    public async Task ProofreadDocumentationAsync(Kernel kernel, KernelProcessStepContext context, string documentation)
+    public async Task ProofreadDocumentationAsync(Kernel kernel, KernelProcessStepContext context, string document)
     {
         Console.WriteLine($"{nameof(ProofreadDocumentationAsync)}:\n\tProofreading documentation...");
 
@@ -211,32 +260,34 @@ public class ProofreadStep : KernelProcessStep
         """;
 
         ChatHistory chatHistory = new ChatHistory(systemPrompt);
-        chatHistory.AddUserMessage(documentation);
+        chatHistory.AddUserMessage(document);
 
         // Use structured output to ensure the response format is easily parsable
         OllamaPromptExecutionSettings settings = new OllamaPromptExecutionSettings();
 
-        IChatCompletionService chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
-        var proofreadResponse = await chatCompletionService.GetChatMessageContentAsync(chatHistory, executionSettings: settings);
-        try
-        {
-            var formattedResponse = JsonSerializer.Deserialize<ProofreadingResponse>(proofreadResponse.Content!.ToString());
-            Console.WriteLine($"\n\tGrade: {(formattedResponse!.MeetsExpectations ? "Pass" : "Fail")}\n\tExplanation: {formattedResponse.Explanation}\n\tSuggestions: {string.Join("\n\t\t", formattedResponse.Suggestions)}");
+        await context.EmitEventAsync("DocumentationApproved", data: document, visibility: KernelProcessEventVisibility.Public);
 
-            if (formattedResponse.MeetsExpectations)
-            {
-                await context.EmitEventAsync("DocumentationApproved", data: documentation, visibility: KernelProcessEventVisibility.Public);
-            }
-            else
-            {
-                await context.EmitEventAsync("DocumentationRejected", data: new { Explanation = formattedResponse.Explanation, Suggestions = formattedResponse.Suggestions });
-            }
-        }
-        catch
-        {
-            // Hack to see the code in action because ollama has no response format setting.
-            await context.EmitEventAsync("DocumentationApproved", data: documentation);
-        }
+        //IChatCompletionService chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
+        //var proofreadResponse = await chatCompletionService.GetChatMessageContentAsync(chatHistory, executionSettings: settings);
+        //try
+        //{
+        //    var formattedResponse = JsonSerializer.Deserialize<ProofreadingResponse>(proofreadResponse.Content!.ToString());
+        //    Console.WriteLine($"\n\tGrade: {(formattedResponse!.MeetsExpectations ? "Pass" : "Fail")}\n\tExplanation: {formattedResponse.Explanation}\n\tSuggestions: {string.Join("\n\t\t", formattedResponse.Suggestions)}");
+
+        //    if (formattedResponse.MeetsExpectations)
+        //    {
+        //        await context.EmitEventAsync("DocumentationApproved", data: documentation, visibility: KernelProcessEventVisibility.Public);
+        //    }
+        //    else
+        //    {
+        //        await context.EmitEventAsync("DocumentationRejected", data: new { Explanation = formattedResponse.Explanation, Suggestions = formattedResponse.Suggestions });
+        //    }
+        //}
+        //catch
+        //{
+        //    // Hack to see the code in action because ollama has no response format setting.
+        //    await context.EmitEventAsync("DocumentationApproved", data: documentation);
+        //}
     }
 
     // A class 

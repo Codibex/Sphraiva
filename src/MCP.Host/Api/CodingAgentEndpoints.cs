@@ -1,4 +1,5 @@
-﻿using MCP.Host.Chat;
+﻿using MCP.Host.Agents;
+using MCP.Host.Chat;
 using MCP.Host.Contracts;
 using MCP.Host.Plugins;
 using MCP.Host.Services;
@@ -8,9 +9,6 @@ using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.Chat;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using MCP.Host.Hubs;
-using Microsoft.AspNetCore.SignalR;
-using MCP.Host.Agents;
 
 namespace MCP.Host.Api;
 
@@ -60,18 +58,30 @@ public static class CodingAgentEndpoints
         Do not implement changes; only review and comment.
         """;
 
-#pragma warning disable SKEXP0080
     public static void MapCodingAgentEndpoints(this WebApplication app)
     {
-        app.MapPost("/agent/workflow", 
+        app.MapPost("/agent/workflow/approve",
+            async (HeaderValueProvider headerValueProvider, ICodingAgentProcessStore store, CodingAgentImplementationApprovalRequest request) =>
+            {
+                var chatId = headerValueProvider.ChatId;
+                if (store.TryGetProcess(chatId!.Value, out var process))
+                {
+                    await process.UserApprovedDocumentAsync(request.Approve);
+                }
+            }
+        ).AddEndpointFilter<RequireChatIdEndpointFilter>();
+
+        app.MapPost("/agent/workflow",
                 (
                     HeaderValueProvider headerValueProvider,
                     CodingAgentImplementationRequest request,
                     ICodingAgentChannel channel) =>
                 {
                     var codingAgentHubConnectionId = headerValueProvider.CodingAgentHubConnectionId;
+                    var chatId = headerValueProvider.ChatId;
 
-                    channel.AddTask(new CodingAgentImplementationTask(codingAgentHubConnectionId!, request.Requirement));
+                    channel.AddTask(new CodingAgentImplementationTask(chatId!.Value, codingAgentHubConnectionId!,
+                        request.Requirement));
                     return Results.Ok("Starting Implementation");
                     // Create the process builder
                     //ProcessBuilder processBuilder = new("DocumentationGeneration");
@@ -131,7 +141,6 @@ public static class CodingAgentEndpoints
                     //    },
                     //    myExternalMessageChannel);
 
-
                     //            response.ContentType = MediaTypeNames.Text.EventStream;
 
                     //            var chatId = headerValueProvider.ChatId!.Value;
@@ -183,7 +192,8 @@ public static class CodingAgentEndpoints
                     //    }
                     //}
                 })
-        .AddEndpointFilter<RequireCodingAgentHubConnectionIdEndpointFilter>();
+            .AddEndpointFilter<RequireChatIdEndpointFilter>()
+            .AddEndpointFilter<RequireCodingAgentHubConnectionIdEndpointFilter>();
     }
 
     private static ChatCompletionAgent CreateAgent(string name, string instructions, Kernel kernel) =>

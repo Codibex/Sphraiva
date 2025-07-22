@@ -6,4 +6,7 @@ public interface IMcpService
     Task AgentStreamAsync(Guid chatId, string message, Action<string> onChunk, CancellationToken cancellationToken);
     Task RemoveChatAsync(Guid chatId, CancellationToken cancellationToken);
     Task CodeAgentStreamAsync(Guid chatId, string codingAgentHubConnectionId, string message, Action<string> onChunk, CancellationToken cancellationToken);
+
+    Task CodeAgentApproveStreamAsync(Guid chatId, bool approve, Action<string> onChunk,
+        CancellationToken cancellationToken);
 }

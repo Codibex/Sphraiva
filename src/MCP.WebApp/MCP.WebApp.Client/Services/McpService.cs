@@ -21,4 +21,9 @@ public class McpService(IMcpHttpClient mcpHttpClient) : IMcpService
     {
         await mcpHttpClient.CodeAgentStreamAsync(chatId, codingAgentHubConnectionId, message, onChunk, cancellationToken);
     }
+
+    public async Task CodeAgentApproveStreamAsync(Guid chatId, bool approve, Action<string> onChunk, CancellationToken cancellationToken)
+    {
+        await mcpHttpClient.CodeAgentApproveStreamAsync(chatId, approve, onChunk, cancellationToken);
+    }
 }

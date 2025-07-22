@@ -1,3 +1,3 @@
 ﻿namespace MCP.Host.Agents;
 
-public record CodingAgentImplementationTask(string ConnectionId, string Requirement);
+public record CodingAgentImplementationTask(Guid ChatId, string ConnectionId, string Requirement);

@@ -12,6 +12,8 @@ public class CodingAgentBackgroundService(ICodingAgentChannel channel, IServiceP
             {
                 await using var scope = serviceProvider.CreateAsyncScope();
                 var process = scope.ServiceProvider.GetRequiredService<CodingAgentProcess>();
+                var processStore = scope.ServiceProvider.GetRequiredService<ICodingAgentProcessStore>();
+                processStore.AddProcess(implementationTask.ChatId, process);
                 await process.RunAsync(implementationTask, stoppingToken);
             }, stoppingToken);
         }
