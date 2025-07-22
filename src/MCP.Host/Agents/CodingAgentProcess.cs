@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Text.Json;
+using MCP.Host.Agents.Steps;
 using MCP.Host.Hubs;
 using MCP.Host.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -10,8 +11,12 @@ using static MCP.Host.Agents.GenerateDocumentationStep;
 
 namespace MCP.Host.Agents;
 
-#pragma warning disable SKEXP0080
-public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<CodeAgentHub, ICodeAgentHub> hubContext)
+public static class CodingAgentProcessTopics
+{
+    public const string REQUEST_REQUIREMENT_UPDATE = nameof(REQUEST_REQUIREMENT_UPDATE);
+}
+
+public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<CodingAgentHub, ICodingAgentHub> hubContext)
 {
     private KernelProcess? _process;
     private Kernel? _kernel;
@@ -20,17 +25,42 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Code
     public async Task RunAsync(CodingAgentImplementationTask implementationTask, CancellationToken cancellationToken)
     {
 
-        ProcessBuilder processBuilder = new("DocumentationGeneration");
+        ProcessBuilder processBuilder = new($"CodingAgent-{implementationTask.ChatId}");
 
         // Add the steps
+        var gatherRequirementStep = processBuilder.AddStepFromType<GatherRequirementStep>();
+        var inputCheckStep = processBuilder.AddStepFromType<InputCheckStep>();
+        var rStep = processBuilder.AddStepFromType<RStep>();
+
         var infoGatheringStep = processBuilder.AddStepFromType<GatherProductInfoStep>();
         var docsGenerationStep = processBuilder.AddStepFromType<GenerateDocumentationStep>();
         var docsProofreadStep = processBuilder.AddStepFromType<ProofreadStep>();
         var docsPublishStep = processBuilder.AddStepFromType<PublishDocumentationStep>();
 
-        var proxyStep = processBuilder.AddProxyStep("workflowProxy", ["RequestUserReview", "PublishDocumentation"]);
+        var proxyStep = processBuilder.AddProxyStep("workflowProxy", [CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE, "RequestUserReview", "PublishDocumentation"]);
 
         // Orchestrate the events
+
+        processBuilder
+            .OnInputEvent(GatherRequirementStep.START_REQUIREMENT_IMPLEMENTATION)
+            .SendEventTo(new(gatherRequirementStep));
+        
+        // Hooking up the process steps
+        gatherRequirementStep
+            .OnFunctionResult()
+            .SendEventTo(new ProcessFunctionTargetBuilder(inputCheckStep, functionName: InputCheckStep.ProcessFunctions.CHECK_INPUT));
+
+        inputCheckStep
+            .OnEvent(InputCheckStep.OutputEvents.INPUT_VALIDATION_FAILED)
+            .EmitExternalEvent(proxyStep, CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE);
+
+        inputCheckStep
+            .OnEvent(InputCheckStep.OutputEvents.INPUT_VALIDATION_SUCCEEDED)
+            .SendEventTo(new ProcessFunctionTargetBuilder(rStep));
+
+
+        // -------------------
+
         processBuilder
             .OnInputEvent("StartDocumentation")
             .SendEventTo(new(infoGatheringStep));
@@ -74,13 +104,22 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Code
         _processMessageChannel = new CodingAgentProcessMessageChannel(implementationTask.ConnectionId, hubContext);
 
         _process = processBuilder.Build();
+
         await _process.StartAsync(_kernel,
             new KernelProcessEvent
             {
-                Id = "StartDocumentation",
-                Data = "Contoso GlowBrew"
+                Id = GatherRequirementStep.START_REQUIREMENT_IMPLEMENTATION,
+                Data = implementationTask.Requirement
             },
             _processMessageChannel);
+
+        //await _process.StartAsync(_kernel,
+        //    new KernelProcessEvent
+        //    {
+        //        Id = "StartDocumentation",
+        //        Data = "Contoso GlowBrew"
+        //    },
+        //    _processMessageChannel);
     }
 
     public async Task UserApprovedDocumentAsync(bool approved)

@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
         {
             var ollamaClient = sp.GetRequiredService<OllamaApiClient>();
             var kernelBuilder = Kernel.CreateBuilder();
+            kernelBuilder.Services.AddLogging(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
             kernelBuilder
                 .AddOllamaChatClient(ollamaClient)
                 .AddOllamaChatCompletion(ollamaClient)

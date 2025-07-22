@@ -4,10 +4,9 @@ using Microsoft.SemanticKernel;
 
 namespace MCP.Host.Agents;
 
-#pragma warning disable SKEXP0080
 public class CodingAgentProcessMessageChannel(
     string implementationTaskConnectionId,
-    IHubContext<CodeAgentHub, ICodeAgentHub> hubContext) : IExternalKernelProcessMessageChannel
+    IHubContext<CodingAgentHub, ICodingAgentHub> hubContext) : IExternalKernelProcessMessageChannel
 {
     //private MyCustomClient? _customClient;
 
@@ -26,6 +25,9 @@ public class CodingAgentProcessMessageChannel(
     {
         switch (externalTopicEvent)
         {
+            case CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE:
+                await RequestMissingDataAsync(message);
+                break;
             case "RequestUserReview": 
                 var requestDocument = message.EventData?.Content;
                 if(requestDocument != null)
@@ -67,6 +69,14 @@ public class CodingAgentProcessMessageChannel(
         //            return;
         //    }
         //}
+    }
+
+    private async Task RequestMissingDataAsync(KernelProcessProxyMessage message)
+    {
+        if (message.EventData?.ToObject() is ICollection<string> missingParameters)
+        {
+            await hubContext.Clients.Client(implementationTaskConnectionId).ReceiveMissingParametersAsync(missingParameters);
+        }
     }
 
     //public async ValueTask Initialize()

@@ -1,4 +1,4 @@
-﻿@page "/code-agent"
+﻿@page "/coding-agent"
 @using MCP.WebApp.Client.Services
 
 <PageTitle>Code Agent</PageTitle>
@@ -10,7 +10,7 @@
         @foreach (var chat in _chatsViewModels)
         {
             <MudTabPanel Text="@chat.DisplayName" ID="@chat.ChatId">
-                <CodeAgentChat ChatViewModel="@chat" />
+                <CodingAgentChat ChatViewModel="@chat" />
             </MudTabPanel>
         }
     </MudDynamicTabs>
@@ -19,7 +19,7 @@
 @code {
     private bool _stateHasChanged;
     private int _activePanelIndex = 0;
-    private readonly IList<CodeAgentViewModel> _chatsViewModels = [];
+    private readonly IList<CodingAgentViewModel> _chatsViewModels = [];
     private CancellationTokenSource? _cancellationTokenSource;
 
     [Inject] public required IMcpService McpService { get; set; }
@@ -44,7 +44,7 @@
 
     private void AddChat()
     {
-        var chat = new CodeAgentViewModel(Guid.NewGuid(), $"CodeAgent {_chatsViewModels.Count + 1}");
+        var chat = new CodingAgentViewModel(Guid.NewGuid(), $"CodingAgent {_chatsViewModels.Count + 1}");
         _chatsViewModels.Add(chat);
         _activePanelIndex = _chatsViewModels.Count - 1;
     }

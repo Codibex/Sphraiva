@@ -54,7 +54,7 @@ app.UseMiddleware<HeaderValueProviderMiddleware>();
 
 //app.UseHttpsRedirection();
 
-app.MapHub<CodeAgentHub>("/codeAgentHub");
+app.MapHub<CodingAgentHub>("/codeAgentHub");
 
 app.MapEndpoints();
 app.MapCodingAgentEndpoints();

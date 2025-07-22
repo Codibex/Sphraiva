@@ -51,7 +51,7 @@
     private HubConnection? _hubConnection;
 
     [Parameter]
-    public required CodeAgentViewModel ChatViewModel { get; set; }
+    public required CodingAgentViewModel ChatViewModel { get; set; }
 
     private string Id => $"codeagent-{ChatViewModel.ChatId}";
 
@@ -69,6 +69,15 @@
         {
             _approvalRequired = true;
             var agentMsg = ChatMessageViewModel.CreateAgentMessage(document);
+            await AddMessage(agentMsg, false);
+            await InvokeAsync(StateHasChanged);
+        });
+
+        _hubConnection.On<ICollection<string>>("ReceiveMissingParametersAsync", async missingParameters =>
+        {
+            _approvalRequired = true;
+            var message = $"Missing Parameters:{Environment.NewLine} {string.Join(", ", missingParameters)}";
+            var agentMsg = ChatMessageViewModel.CreateAgentMessage(message);
             await AddMessage(agentMsg, false);
             await InvokeAsync(StateHasChanged);
         });
