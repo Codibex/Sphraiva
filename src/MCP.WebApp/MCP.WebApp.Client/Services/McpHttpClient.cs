@@ -43,7 +43,6 @@ public class McpHttpClient(HttpClient httpClient) : IMcpHttpClient
         request.Headers.Add(HeaderNames.CHAT_ID_HEADER_NAME, chatId.ToString());
         request.Headers.Add(HeaderNames.CODING_AGENT_HUB_CONNECTION_ID_HEADER_NAME, codingAgentHubConnectionId);
         request.Content = JsonContent.Create(new CodingAgentImplementationRequest(message));
-        httpClient.Timeout = TimeSpan.FromMinutes(10);
         var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadAsStringAsync(cancellationToken);

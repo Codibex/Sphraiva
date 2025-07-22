@@ -122,6 +122,23 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Codi
         //    _processMessageChannel);
     }
 
+    public async Task ContinueAsync(CodingAgentImplementationTask implementationTask)
+    {
+        if (_process is null || _kernel is null || _processMessageChannel is null)
+        {
+            return;
+        }
+
+        // Implement any cleanup logic if necessary
+        await _process.StartAsync(_kernel,
+            new KernelProcessEvent
+            {
+                Id = GatherRequirementStep.START_REQUIREMENT_IMPLEMENTATION,
+                Data = implementationTask.Requirement
+            },
+            _processMessageChannel);
+    }
+
     public async Task UserApprovedDocumentAsync(bool approved)
     {
         if (_process is null || _kernel is null || _processMessageChannel is null)
@@ -138,6 +155,8 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Codi
             },
             _processMessageChannel);
     }
+
+    
 }
 
 /*

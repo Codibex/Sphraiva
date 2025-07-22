@@ -72,16 +72,27 @@ public static class CodingAgentEndpoints
         ).AddEndpointFilter<RequireChatIdEndpointFilter>();
 
         app.MapPost("/agent/workflow",
-                (
+                async (
                     HeaderValueProvider headerValueProvider,
+                    ICodingAgentProcessStore store,
                     CodingAgentImplementationRequest request,
                     ICodingAgentChannel channel) =>
                 {
                     var codingAgentHubConnectionId = headerValueProvider.CodingAgentHubConnectionId;
                     var chatId = headerValueProvider.ChatId;
 
-                    channel.AddTask(new CodingAgentImplementationTask(chatId!.Value, codingAgentHubConnectionId!,
-                        request.Requirement));
+                    if (store.TryGetProcess(chatId!.Value, out var process))
+                    {
+                        await process.ContinueAsync(
+                            new CodingAgentImplementationTask(chatId!.Value, codingAgentHubConnectionId!,
+                                request.Requirement));
+                    }
+                    else
+                    {
+                        channel.AddTask(new CodingAgentImplementationTask(chatId!.Value, codingAgentHubConnectionId!,
+                            request.Requirement));
+                    }
+                    
                     return Results.Ok("Starting Implementation");
                     // Create the process builder
                     //ProcessBuilder processBuilder = new("DocumentationGeneration");

@@ -1,7 +1,7 @@
 ﻿@page "/coding-agent"
 @using MCP.WebApp.Client.Services
 
-<PageTitle>Code Agent</PageTitle>
+<PageTitle>Coding Agent</PageTitle>
 
 <div class="main-content d-flex">
     <MudDynamicTabs @bind-ActivePanelIndex="@_activePanelIndex" AddTab="AddChat" CloseTab="RemoveChat"
@@ -44,7 +44,7 @@
 
     private void AddChat()
     {
-        var chat = new CodingAgentViewModel(Guid.NewGuid(), $"CodingAgent {_chatsViewModels.Count + 1}");
+        var chat = new CodingAgentViewModel(Guid.NewGuid(), $"Coding Agent {_chatsViewModels.Count + 1}");
         _chatsViewModels.Add(chat);
         _activePanelIndex = _chatsViewModels.Count - 1;
     }
