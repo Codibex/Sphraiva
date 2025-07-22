@@ -204,7 +204,7 @@ public class ProofreadStep : KernelProcessStep
             1. Documentation should be free of any offensive or inappropriate language.
             1. Documentation should be technically accurate.
         2. If the documentation does not pass 1, you must write detailed feedback of the changes that are needed to improve the documentation. 
-        3. Provide the feedback in a json format with the following properties:
+        3. Provide the feedback as json with the following properties:
            1. bool MeetsExpectations
            1. string Explanation
            1. List<string> Suggestions
