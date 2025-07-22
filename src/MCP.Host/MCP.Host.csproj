@@ -15,7 +15,6 @@
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" />
     <PackageReference Include="Microsoft.SemanticKernel.Process.Core" />
     <PackageReference Include="Microsoft.SemanticKernel.Process.LocalRuntime" />
-    <PackageReference Include="Microsoft.SemanticKernel.Process.Runtime.Dapr" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>

@@ -42,7 +42,7 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Code
         // When external human approval event comes in, route it to the 'isApproved' parameter of the docsPublishStep
         processBuilder
             .OnInputEvent("UserApprovedDocument")
-            .SendEventTo(new(docsPublishStep, parameterName: "userApproval"));
+            .SendEventTo(new(docsPublishStep, functionName:  "PublishDocumentation"));
 
         // Hooking up the rest of the process steps
         infoGatheringStep
@@ -60,13 +60,13 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Code
         // When the proofreader approves the documentation, send it to the 'document' parameter of the docsPublishStep
         // Additionally, the generated document is emitted externally for user approval using the pre-configured proxyStep
         docsProofreadStep
-            .OnEvent("DocumentationApproved")
+            .OnEvent("DocumentationByAgentApproved")
             .EmitExternalEvent(proxyStep, "RequestUserReview")
-            .SendEventTo(new ProcessFunctionTargetBuilder(docsPublishStep, parameterName: "document"));
+            .SendEventTo(new ProcessFunctionTargetBuilder(docsPublishStep, functionName: "ApplyDocument"));
         
         // When event is approved by user, it gets published externally too
         docsPublishStep
-            .OnFunctionResult()
+            .OnFunctionResult(functionName: "PublishDocumentation")
             .EmitExternalEvent(proxyStep, "PublishDocumentation")
             .StopProcess();
 
@@ -81,22 +81,6 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Code
                 Data = "Contoso GlowBrew"
             },
             _processMessageChannel);
-
-        try
-        {
-            await _process.StartAsync(_kernel,
-                new KernelProcessEvent
-                {
-                    Id = "UserApprovedDocument",
-                    Data = true
-                });
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
-       
     }
 
     public async Task UserApprovedDocumentAsync(bool approved)
@@ -105,7 +89,6 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Code
         {
             return;
         }
-        
 
         // Implement any cleanup logic if necessary
         await _process.StartAsync(_kernel,
@@ -179,11 +162,9 @@ public class GenerateDocumentationStep : KernelProcessStep<GeneratedDocumentatio
 
         // Get a response from the LLM
         IChatCompletionService chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
-        //var generatedDocumentationResponse = await chatCompletionService.GetChatMessageContentAsync(this._state.ChatHistory!);
+        var generatedDocumentationResponse = await chatCompletionService.GetChatMessageContentAsync(this._state.ChatHistory!);
 
-        //await context.EmitEventAsync("DocumentationGenerated", generatedDocumentationResponse.Content!.ToString());
-        var generatedDocumentationResponse = "foo";
-        await context.EmitEventAsync("DocumentationGenerated", generatedDocumentationResponse);
+        await context.EmitEventAsync("DocumentationGenerated", generatedDocumentationResponse.Content!.ToString());
     }
 
     [KernelFunction]
@@ -208,22 +189,40 @@ public class GenerateDocumentationStep : KernelProcessStep<GeneratedDocumentatio
 }
 
 // A process step to publish documentation
-public class PublishDocumentationStep : KernelProcessStep
+public class PublishDocumentationStep : KernelProcessStep<PublishDocumentationState>
 {
-    [KernelFunction]
-    public DocumentInfo PublishDocumentation(string document, bool userApproval)
+    private PublishDocumentationState _state = new();
+
+    // Called by the process runtime when the step instance is activated. Use this to load state that may be persisted from previous activations.
+    public override ValueTask ActivateAsync(KernelProcessStepState<PublishDocumentationState> state)
     {
-        //if (userApproval)
+        _state = state.State!;
+
+        return base.ActivateAsync(state);
+    }
+
+    [KernelFunction]
+    public void ApplyDocument(string document)
+    {
+        _state.Document = document;
+    }
+
+    [KernelFunction]
+    public string PublishDocumentation(bool userApproval)
+    {
+        if (userApproval)
         // For example purposes we just write the generated docs to the console
         {
-            Console.WriteLine($"[{nameof(PublishDocumentationStep)}]:\tPublishing product documentation approved by user: \n{document}");
+            Console.WriteLine($"[{nameof(PublishDocumentationStep)}]:\tPublishing product documentation approved by user: \n{_state.Document}");
         }
 
-        return new DocumentInfo
-        {
-            Content = "asdfj"
-        };
+        return _state.Document!;
     }
+}
+
+public class PublishDocumentationState
+{
+    public string? Document { get; set; }
 }
 
 // Custom classes must be serializable
@@ -238,7 +237,7 @@ public class DocumentInfo
 public class ProofreadStep : KernelProcessStep
 {
     [KernelFunction]
-    public async Task ProofreadDocumentationAsync(Kernel kernel, KernelProcessStepContext context, string document)
+    public async Task ProofreadDocumentationAsync(Kernel kernel, KernelProcessStepContext context, string documentation)
     {
         Console.WriteLine($"{nameof(ProofreadDocumentationAsync)}:\n\tProofreading documentation...");
 
@@ -260,34 +259,32 @@ public class ProofreadStep : KernelProcessStep
         """;
 
         ChatHistory chatHistory = new ChatHistory(systemPrompt);
-        chatHistory.AddUserMessage(document);
+        chatHistory.AddUserMessage(documentation);
 
         // Use structured output to ensure the response format is easily parsable
         OllamaPromptExecutionSettings settings = new OllamaPromptExecutionSettings();
 
-        await context.EmitEventAsync("DocumentationApproved", data: document, visibility: KernelProcessEventVisibility.Public);
+        IChatCompletionService chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
+        var proofreadResponse = await chatCompletionService.GetChatMessageContentAsync(chatHistory, executionSettings: settings);
+        try
+        {
+            var formattedResponse = JsonSerializer.Deserialize<ProofreadingResponse>(proofreadResponse.Content!.ToString());
+            Console.WriteLine($"\n\tGrade: {(formattedResponse!.MeetsExpectations ? "Pass" : "Fail")}\n\tExplanation: {formattedResponse.Explanation}\n\tSuggestions: {string.Join("\n\t\t", formattedResponse.Suggestions)}");
 
-        //IChatCompletionService chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
-        //var proofreadResponse = await chatCompletionService.GetChatMessageContentAsync(chatHistory, executionSettings: settings);
-        //try
-        //{
-        //    var formattedResponse = JsonSerializer.Deserialize<ProofreadingResponse>(proofreadResponse.Content!.ToString());
-        //    Console.WriteLine($"\n\tGrade: {(formattedResponse!.MeetsExpectations ? "Pass" : "Fail")}\n\tExplanation: {formattedResponse.Explanation}\n\tSuggestions: {string.Join("\n\t\t", formattedResponse.Suggestions)}");
-
-        //    if (formattedResponse.MeetsExpectations)
-        //    {
-        //        await context.EmitEventAsync("DocumentationApproved", data: documentation, visibility: KernelProcessEventVisibility.Public);
-        //    }
-        //    else
-        //    {
-        //        await context.EmitEventAsync("DocumentationRejected", data: new { Explanation = formattedResponse.Explanation, Suggestions = formattedResponse.Suggestions });
-        //    }
-        //}
-        //catch
-        //{
-        //    // Hack to see the code in action because ollama has no response format setting.
-        //    await context.EmitEventAsync("DocumentationApproved", data: documentation);
-        //}
+            if (formattedResponse.MeetsExpectations)
+            {
+                await context.EmitEventAsync("DocumentationByAgentApproved", data: documentation, visibility: KernelProcessEventVisibility.Public);
+            }
+            else
+            {
+                await context.EmitEventAsync("DocumentationRejected", data: new { Explanation = formattedResponse.Explanation, Suggestions = formattedResponse.Suggestions });
+            }
+        }
+        catch
+        {
+            // Hack to see the code in action because ollama has no response format setting.
+            await context.EmitEventAsync("DocumentationByAgentApproved", data: documentation);
+        }
     }
 
     // A class 

@@ -2,7 +2,7 @@
 
 namespace MCP.Host.Services;
 
-public class CodingAgentBackgroundService(ICodingAgentChannel channel, IServiceProvider serviceProvider) : BackgroundService
+public class CodingAgentBackgroundService(ICodingAgentChannel channel, IServiceProvider serviceProvider, ILogger<CodingAgentBackgroundService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -14,7 +14,15 @@ public class CodingAgentBackgroundService(ICodingAgentChannel channel, IServiceP
                 var process = scope.ServiceProvider.GetRequiredService<CodingAgentProcess>();
                 var processStore = scope.ServiceProvider.GetRequiredService<ICodingAgentProcessStore>();
                 processStore.AddProcess(implementationTask.ChatId, process);
-                await process.RunAsync(implementationTask, stoppingToken);
+                try
+                {
+                    await process.RunAsync(implementationTask, stoppingToken);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Unexpected agent process error.");
+                }
+                
             }, stoppingToken);
         }
     }
