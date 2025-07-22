@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace MCP.Host.Agents.Steps;
 
-public class InputCheckStep : KernelProcessStep<InputCheckState>
+public class InputCheckStep : KernelProcessStep<InputCheckStep.InputCheckState>
 {
     private InputCheckState _state = new();
 
@@ -66,7 +66,6 @@ public class InputCheckStep : KernelProcessStep<InputCheckState>
             var json = match.Success ? match.Groups[1].Value.Trim() : response.Content!.Trim();
 
             checkResult = JsonSerializer.Deserialize<InputCheckResult>(json);
-            
         }
         catch(Exception e)
         {
@@ -87,17 +86,9 @@ public class InputCheckStep : KernelProcessStep<InputCheckState>
 
         await context.EmitEventAsync(OutputEvents.INPUT_VALIDATION_FAILED, data: checkResult.MissingParameters, KernelProcessEventVisibility.Public);
     }
-}
 
-public class InputCheckResult
-{
-    public required string InstructionName { get; set; }
-    public required string RepositoryName { get; set; }
-    public required string Requirement { get; set; }
-    public required ICollection<string> MissingParameters { get; set; } = [];
-}
-
-public class InputCheckState
-{
-    public ChatHistory? ChatHistory { get; set; }
+    public class InputCheckState
+    {
+        public ChatHistory? ChatHistory { get; set; }
+    }
 }

@@ -22,7 +22,6 @@ public class CodingAgentBackgroundService(ICodingAgentChannel channel, IServiceP
                 {
                     logger.LogError(e, "Unexpected agent process error.");
                 }
-                
             }, stoppingToken);
         }
     }

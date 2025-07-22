@@ -7,8 +7,8 @@ public class KernelProvider(Kernel kernel, IMcpPluginCache pluginCache) : IKerne
 {
     public Kernel Get()
     {
-        var tools = pluginCache.GetToolsForPlugin(PluginNames.Sphraiva);
-        kernel.Plugins.AddFromFunctions(PluginNames.Sphraiva, tools.Select(t => t.AsKernelFunction()));
+        var tools = pluginCache.GetToolsForPlugin(PluginDescriptions.SphraivaPlugin.NAME);
+        kernel.Plugins.AddFromFunctions(PluginDescriptions.SphraivaPlugin.NAME, tools.Select(t => t.AsKernelFunction()));
         return kernel;
     }
 }

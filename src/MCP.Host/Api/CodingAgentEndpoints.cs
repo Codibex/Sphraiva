@@ -226,22 +226,22 @@ public static class CodingAgentEndpoints
     {
         const string InfrastructureAgentName = "InfrastructureAgent";
         ChatCompletionAgent infrastructureAgent = CreateAgent(InfrastructureAgentName, InfrastructureInstructions, kernel.Clone());
-        var tools = pluginCache.GetToolsForPlugin(PluginNames.Sphraiva);
-        infrastructureAgent.Kernel.Plugins.AddFromFunctions(PluginNames.Sphraiva, tools.Select(t => t.AsKernelFunction()));
+        var tools = pluginCache.GetToolsForPlugin(PluginDescriptions.SphraivaPlugin.NAME);
+        infrastructureAgent.Kernel.Plugins.AddFromFunctions(PluginDescriptions.SphraivaPlugin.NAME, tools.Select(t => t.AsKernelFunction()));
 
         //infrastructureAgent.Kernel.Plugins.AddFromType<CalendarPlugin>();
 
         const string ChangeRequestAgentName = "ChangeRequestAgent";
         ChatCompletionAgent changeRequestAgent = CreateAgent(ChangeRequestAgentName, ChangeRequestInstructions, kernel.Clone());
-        changeRequestAgent.Kernel.Plugins.AddFromFunctions(PluginNames.Sphraiva, tools.Select(t => t.AsKernelFunction()));
+        changeRequestAgent.Kernel.Plugins.AddFromFunctions(PluginDescriptions.SphraivaPlugin.NAME, tools.Select(t => t.AsKernelFunction()));
 
         const string ImplementationAgentName = "ImplementationAgent";
         ChatCompletionAgent implementationAgent = CreateAgent(ImplementationAgentName, ImplementationInstructions, kernel.Clone());
-        implementationAgent.Kernel.Plugins.AddFromFunctions(PluginNames.Sphraiva, tools.Select(t => t.AsKernelFunction()));
+        implementationAgent.Kernel.Plugins.AddFromFunctions(PluginDescriptions.SphraivaPlugin.NAME, tools.Select(t => t.AsKernelFunction()));
 
         const string ReviewAgentName = "ReviewAgent";
         ChatCompletionAgent reviewAgent = CreateAgent(ReviewAgentName, ReviewInstructions, kernel.Clone());
-        reviewAgent.Kernel.Plugins.AddFromFunctions(PluginNames.Sphraiva, tools.Select(t => t.AsKernelFunction()));
+        reviewAgent.Kernel.Plugins.AddFromFunctions(PluginDescriptions.SphraivaPlugin.NAME, tools.Select(t => t.AsKernelFunction()));
 
         KernelFunction selectionFunction =
 #pragma warning disable SKEXP0110

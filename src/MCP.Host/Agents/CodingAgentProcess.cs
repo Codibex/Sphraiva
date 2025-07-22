@@ -30,7 +30,8 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Codi
         // Add the steps
         var gatherRequirementStep = processBuilder.AddStepFromType<GatherRequirementStep>();
         var inputCheckStep = processBuilder.AddStepFromType<InputCheckStep>();
-        var rStep = processBuilder.AddStepFromType<RStep>();
+        var setupInfrastructureStep = processBuilder.AddStepFromType<SetupInfrastructureStep>();
+        var changeAnalysisStep = processBuilder.AddStepFromType<ChangeAnalyzeStep>();
 
         var infoGatheringStep = processBuilder.AddStepFromType<GatherProductInfoStep>();
         var docsGenerationStep = processBuilder.AddStepFromType<GenerateDocumentationStep>();
@@ -56,7 +57,11 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Codi
 
         inputCheckStep
             .OnEvent(InputCheckStep.OutputEvents.INPUT_VALIDATION_SUCCEEDED)
-            .SendEventTo(new ProcessFunctionTargetBuilder(rStep));
+            .SendEventTo(new ProcessFunctionTargetBuilder(setupInfrastructureStep));
+
+        setupInfrastructureStep
+            .OnEvent(SetupInfrastructureStep.OutputEvents.SETUP_INFRASTRUCTURE_SUCCEEDED)
+            .SendEventTo(new ProcessFunctionTargetBuilder(changeAnalysisStep));
 
 
         // -------------------
@@ -155,8 +160,6 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Codi
             },
             _processMessageChannel);
     }
-
-    
 }
 
 /*

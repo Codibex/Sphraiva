@@ -7,7 +7,6 @@ using MCP.Host.Services;
 using MCP.Host.Setup;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.Net.Mime;
-using System.Threading.Channels;
 
 var builder = WebApplication.CreateBuilder(args);
 
