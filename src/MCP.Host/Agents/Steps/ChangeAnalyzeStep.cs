@@ -48,7 +48,7 @@ public class ChangeAnalyzeStep : KernelProcessStep
             throw new InvalidOperationException("Chat completion response is null.");
         }
 
-        codingProcessContext.RequiredChanges = response.Content;
+        codingProcessContext.PlannedChanges = response.Content;
 
         await context.EmitEventAsync(OutputEvents.CHANGE_ANALYSIS_FINISHED, data: codingProcessContext);
     }

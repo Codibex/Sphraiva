@@ -1,7 +1,7 @@
 @using MCP.WebApp.Client.Services;
 @using Microsoft.AspNetCore.SignalR.Client
 <MudPaper Class="pa-4 mx-auto d-flex flex-column chat-container w-100" MaxWidth="1000px" Elevation="4">
-    <MudText Typo="Typo.h5" GutterBottom="true">Code Agent</MudText>
+    <MudText Typo="Typo.h5" GutterBottom="true">Coding Agent</MudText>
     <MudPaper id="@Id" Class="pa-2 mb-4 chat" Elevation="1">
         @foreach (var message in ChatViewModel.Messages)
         {
@@ -39,7 +39,13 @@
 </MudPaper>
 
 @code {
-    private string _inputText = string.Empty;
+    // private string _inputText = string.Empty;
+    private string _input =
+        """
+        Im Repository mit dem Namen Codibex/Sphraiva gehört eine Anpassung gemacht. Die Methode Send gehört auf SendAsync umbenannt. Aufrufende Stellen gehören auch angepasst.
+        InstructionName: net9
+        RepositoryName: Codibex/Sphraiva
+        """;
     private bool _isLoading;
     private CancellationTokenSource? _cancellationTokenSource;
     private string _errorMessage = string.Empty;
