@@ -1,3 +1,4 @@
+using MCP.Host.Agents;
 using MCP.Host.Api;
 using MCP.Host.Chat;
 using MCP.Host.Hubs;
@@ -35,9 +36,9 @@ builder.Services.AddResponseCompression(options =>
     options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat([MediaTypeNames.Application.Octet]);
 });
 
-builder.Services.AddTransient<CodeAgentProcess>();
-builder.Services.AddHostedService<CodeAgentBackgroundService>();
-builder.Services.AddSingleton(Channel.CreateUnbounded<CodeAgentImplementationTask>());
+builder.Services.AddTransient<CodingAgentProcess>();
+builder.Services.AddHostedService<CodingAgentBackgroundService>();
+builder.Services.AddSingleton<ICodingAgentChannel, CodingAgentChannel>();
 
 var app = builder.Build();
 

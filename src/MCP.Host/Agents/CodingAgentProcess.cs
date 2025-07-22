@@ -1,14 +1,15 @@
 ﻿using MCP.Host.Api;
 using MCP.Host.Hubs;
+using MCP.Host.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.SemanticKernel;
 
-namespace MCP.Host.Services;
+namespace MCP.Host.Agents;
 
 #pragma warning disable SKEXP0080
-public class CodeAgentProcess(IKernelProvider kernelProvider, IHubContext<CodeAgentHub, ICodeAgentHub> hubContext)
+public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<CodeAgentHub, ICodeAgentHub> hubContext)
 {
-    public async Task RunAsync(CodeAgentImplementationTask implementationTask, CancellationToken cancellationToken)
+    public async Task RunAsync(CodingAgentImplementationTask implementationTask, CancellationToken cancellationToken)
     {
 
         ProcessBuilder processBuilder = new("DocumentationGeneration");
@@ -56,7 +57,7 @@ public class CodeAgentProcess(IKernelProvider kernelProvider, IHubContext<CodeAg
             .EmitExternalEvent(proxyStep, "PublishDocumentation");
 
         var kernel = kernelProvider.Get();
-        IExternalKernelProcessMessageChannel myExternalMessageChannel = new MyCloudEventClient(implementationTask.ConnectionId, hubContext);
+        IExternalKernelProcessMessageChannel myExternalMessageChannel = new CodingAgentProcessMessageChannel(implementationTask.ConnectionId, hubContext);
 
         var process = processBuilder.Build();
         await process.StartAsync(kernel,

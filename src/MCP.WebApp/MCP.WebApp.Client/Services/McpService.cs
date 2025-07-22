@@ -17,8 +17,8 @@ public class McpService(IMcpHttpClient mcpHttpClient) : IMcpService
         await mcpHttpClient.RemoveChatAsync(chatId, cancellationToken);
     }
 
-    public async Task CodeAgentStreamAsync(Guid chatId, string connectionId, string message, Action<string> onChunk, CancellationToken cancellationToken)
+    public async Task CodeAgentStreamAsync(Guid chatId, string codingAgentHubConnectionId, string message, Action<string> onChunk, CancellationToken cancellationToken)
     {
-        await mcpHttpClient.CodeAgentStreamAsync(chatId, connectionId, message, onChunk, cancellationToken);
+        await mcpHttpClient.CodeAgentStreamAsync(chatId, codingAgentHubConnectionId, message, onChunk, cancellationToken);
     }
 }

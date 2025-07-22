@@ -15,6 +15,7 @@ using MCP.Host.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 using static MCP.Host.Api.GenerateDocumentationStep;
+using MCP.Host.Agents;
 
 namespace MCP.Host.Api;
 
@@ -70,15 +71,17 @@ public static class CodingAgentEndpoints
         app.MapPost("/agent/workflow", 
                 async (
                     HeaderValueProvider headerValueProvider,
-                    CodeAgentImplementationRequest request, 
+                    CodingAgentImplementationRequest request, 
                     IKernelProvider kernelProvider, 
                     IMcpPluginCache pluginCache, 
                     ChatCache chatCache, 
-                    IHubContext<CodeAgentHub, ICodeAgentHub> hubContext, 
-                    Channel<CodeAgentImplementationTask> channel,
-                    HttpResponse response, CancellationToken cancellationToken) =>
+                    IHubContext<CodeAgentHub, ICodeAgentHub> hubContext,
+                    ICodingAgentChannel channel,
+                    CancellationToken cancellationToken) =>
                 {
-                    channel.Writer.TryWrite(new CodeAgentImplementationTask(request.ConnectionId, request.Requirement));
+                    var codingAgentHubConnectionId = headerValueProvider.CodingAgentHubConnectionId;
+
+                    channel.AddTask(new CodingAgentImplementationTask(codingAgentHubConnectionId!, request.Requirement));
                     await Task.CompletedTask;
             // Create the process builder
             //ProcessBuilder processBuilder = new("DocumentationGeneration");
@@ -126,7 +129,7 @@ public static class CodingAgentEndpoints
             //    .EmitExternalEvent(proxyStep, "PublishDocumentation");
 
             //var kernel = kernelProvider.Get();
-            //IExternalKernelProcessMessageChannel myExternalMessageChannel = new MyCloudEventClient(hubContext);
+            //IExternalKernelProcessMessageChannel myExternalMessageChannel = new CodingAgentProcessMessageChannel(hubContext);
 
             //// Build and run the process
             //var process = processBuilder.Build();
@@ -190,7 +193,7 @@ public static class CodingAgentEndpoints
             //    }
             //}
                 })
-        .AddEndpointFilter<RequireChatIdEndpointFilter>();
+        .AddEndpointFilter<RequireCodingAgentHubConnectionIdEndpointFilter>();
     }
 
     private static ChatCompletionAgent CreateAgent(string name, string instructions, Kernel kernel) =>

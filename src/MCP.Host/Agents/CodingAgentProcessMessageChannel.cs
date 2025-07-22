@@ -2,10 +2,10 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.SemanticKernel;
 
-namespace MCP.Host.Services;
+namespace MCP.Host.Agents;
 
 #pragma warning disable SKEXP0080
-public class MyCloudEventClient(
+public class CodingAgentProcessMessageChannel(
     string implementationTaskConnectionId,
     IHubContext<CodeAgentHub, ICodeAgentHub> hubContext) : IExternalKernelProcessMessageChannel
 {
