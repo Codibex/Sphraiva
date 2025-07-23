@@ -14,16 +14,7 @@ public class ChangeAnalyzeStep : KernelProcessStep
         - What exactly needs to be changed (e.g., add a method, update configuration, fix a bug).
         Respond in Markdown as a numbered list.
         """;
-    //"""
-    //Your job is to analyze the provided requirements and compare them with the current state of the cloned repository in the development container.
-    //    Identify and list the specific changes that need to be made in the repository to fulfill the requirements.
-    //    For each required change, specify:
-    //    - Which files or components need to be modified, added, or removed.
-    //    - What exactly needs to be changed (e.g., add a method, update configuration, fix a bug).
-    //    If information is missing or unclear, ask clarifying questions.
-    //    Respond in Markdown as a numbered list.
-    //""";
-
+    
     public static class OutputEvents
     {
         public const string CHANGE_ANALYSIS_FINISHED = nameof(CHANGE_ANALYSIS_FINISHED);

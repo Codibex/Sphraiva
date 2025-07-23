@@ -7,23 +7,24 @@ public class ImplementationStep : KernelProcessStep
 {
     private const string SYSTEM_PROMPT =
         """
-        Implement the planned changes in the cloned repository within the development container in the workspace directory.
-        - Use the provided change plan to guide your implementation.
+        You are a coding agent. Your job is to implement the following planned changes in the cloned repository within the development container in the workspace directory.
+        The development container is set up with all necessary tools and dependencies to implement the changes.
+        You can use the available tools to access the repository and the development container.
+
+        Use the provided change plan below to guide your implementation:
+        ---
+        {PlannedChanges}
+        ---
+
+        Instructions:
+        - For each change, provide the actual code modifications as code blocks, including the file name and the location within the file.
+        - Only output the code changes, not a step-by-step description.
         - Create a development branch with a short name reflecting the required changes.
-        - For each change, update the relevant files and commit with a meaningful message.
+        - Commit each change with a meaningful message.
         - Build the solution and fix any build issues.
         - Push the changes to the remote repository only after all planned changes are implemented, the solution builds successfully, and all tests pass.
+        - Respond in Markdown format, using code blocks for code changes and clear file references.
         """;
-    //"""
-    //Your job is to implement the planned changes in the cloned repository within the development container.
-    //- Use the provided change plan to guide your implementation.
-    //- Create a development branch with a short name reflecting the required changes.
-    //- For each change, update the relevant files and commit with a meaningful message.
-    //- Build the solution and fix any build issues.
-    //-Push the changes to the remote repository only after all planned changes are implemented, the solution builds successfully, and all tests pass.
-    //If information is missing or unclear, ask clarifying questions.
-    //Respond with a summary of the actions taken and any issues encountered.
-    //""";
 
     public static class OutputEvents
     {
@@ -36,11 +37,12 @@ public class ImplementationStep : KernelProcessStep
         var logger = kernel.GetRequiredService<ILogger<InputCheckStep>>();
         logger.LogInformation("Implement planned changes");
 
-        var chatHistory = new ChatHistory(SYSTEM_PROMPT);
+        // Insert planned changes directly into the prompt for clarity
+        var prompt = SYSTEM_PROMPT.Replace("{PlannedChanges}", codingProcessContext.PlannedChanges ?? "<no planned changes provided>");
+        var chatHistory = new ChatHistory(prompt);
         chatHistory.AddSystemMessage($"Container: {codingProcessContext.ContainerName}");
         chatHistory.AddUserMessage($"Repository: {codingProcessContext.RepositoryName}");
         chatHistory.AddUserMessage($"Requirement: {codingProcessContext.Requirement}");
-        chatHistory.AddSystemMessage($"Planned changes: {codingProcessContext.PlannedChanges}");
 
         var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
         var response = await chatCompletionService.GetChatMessageContentAsync(chatHistory);
