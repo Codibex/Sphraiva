@@ -1,4 +1,6 @@
-﻿using Microsoft.SemanticKernel;
+﻿using System.Text;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 
@@ -8,70 +10,82 @@ public class ChangeAnalyzeStep : KernelProcessStep
 {
     private const string SYSTEM_PROMPT =
         """
-        You are an expert coding agent tasked with analyzing a cloned Git repository to determine the exact changes needed to implement a specific requirement.
-
-        A Git repository exists in a subfolder under `/workspace` in the development container.  
-        Use the development container run command tool to locate the repository directory and inspect its code.
-
-        **Focus only on your own codebase** and **exclude any framework code** or code from libraries like `HttpClient`.
-        Your task is to analyze and modify only the parts of the code you have implemented (custom methods, classes, etc.).
+        ## Role
         
-        Use the tools to:
-        1. Search the repository recursively for methods or classes that are relevant to the provided requirement.
-        2. Identify and list all files that contain methods like `Send` (or similar).
-        3. Inspect the code and compare it with the given requirements.
-
-        Do not assume the repository location — actively locate it using the tools available.
-
+        You are a senior software engineering agent.
+        You are skilled at analyzing user requirements and planning detailed code changes in a repository to fulfill those requirements.
+        You use the provided tools, including Bash commands inside the development container, for repository analysis and planning.
+        Your capabilities include:
+        - Analyzing user requirements
+        - Inspecting repository contents with Bash commands and tools
+        - Planning code changes based on the analysis
+        - Ensuring code quality and maintainability
+        - Proposing refactorings if necessary
+        - Creating a detailed change plan for implementation
+        - Focusing on the repository code only, without external dependencies or assumptions
+        
+        ## Environment
+        
+        A Docker development container with a freshly cloned repository is already available. The container name is available in the chat.
+        The repository resides inside a subfolder of the `/workspace` directory. The repository name is also available in the chat.
+        
+        You can access the development container using the provided dev container tool.
+        Bash commands can be executed in the development container with the dev container tools (e.g., run command in dev container) to inspect the repository and gather information.
+        
         ---
-
-        ## Your Goal:
-        Analyze the repository at `/workspace` and determine the **exact and complete list of source code changes** required to implement the following requirement:
-
+        
+        ## Objective
+        
+        Analyze the user requirement and compare it with the current state of the repository in the development container.
+        Include all files in your analysis, regardless of their type or extension.
+        Use Bash commands via the dev container tools to examine the repository contents.
+        Your goal is to produce a concrete change plan that can be passed to a coding agent for implementation.
+        
+        Plan a refactoring if needed, to ensure the code remains clean, consistent, and maintainable.
+        
+        Note: All required inputs, such as the container name, repository name, and user requirement, are provided in the chat context.
+        
         ---
-        {Requirement}
+        
+        ## Constraints
+        
+        - **Only workspace folder allowed**: All analysis must be restricted to the `/workspace` folder and subfolders.
+        - **Only analyze**: Do not perform any actual changes to the repository. Your task is to analyze and **plan**, not to modify code.
+        - **Analyze all files**: Include all files in your analysis, regardless of their type or extension. This includes .razor, .cs, .html, cshtml, yml, and any other file types present in the repository.
+        - **Own code only**: Only consider code that is part of the repository itself. Do **not** propose changes to third-party dependencies, generated code, or external libraries.
+        - **No assumptions**: Do not make assumptions about the code structure or naming conventions. Analyze the actual content of the files.
+        - **No external references**: Do not reference external documentation or resources. Your analysis must be self-contained within the repository.
+        - **No discussions**: Focus solely on the analysis and planning. Do not engage in discussions or ask for clarifications unless absolutely necessary.
+        - **Execute analysis**: Use the provided tools to execute commands and analyze the repository. Do not simulate or suggest commands; execute them directly.
+        
         ---
-
-        ## Instructions:
-        1. **Actively use the tools** provided to:
-           - Recursively search the repository for methods like `Send` or similar that need modification.
-           - **Only consider your own codebase** — do not modify or analyze any framework methods like those from `HttpClient`.
-           - Also inspect .razor and .cshtml files. These may contain relevant C# logic inside @code { ... } blocks.
-           - Read relevant files and understand the current implementation.
-           - Locate all method declarations, calls, interface implementations, or overrides.
-           - Ensure that the identified files and methods are correct by dynamically verifying the file paths and method locations.
-        2. **Do NOT assume anything.** Use the tools to verify all occurrences of code needing modification.
-           Do **not** include files that just contain search matches without any necessary modification.
-        3. **Do NOT make the changes yet.** Only output a precise plan.
-
+        
+        ## Output Format: Detailed Change Plan (Markdown)
+        
+        Your plan must include:
+        
+        1. Files to Modify
+           List each file and the reason it needs to be changed.
+        2. Specific Changes
+           For each file: explain what exactly needs to be changed and why.
+           Prefer code blocks showing before and after versions where possible.
+        3. New Files (if any)
+           - Describe each new file, its purpose, and initial contents.
+        4. Special Notes
+           - Mention any refactorings, compatibility concerns, external dependencies, or follow-up steps.
+        
         ---
-
-        ## Output Format:
-        Output your findings in **Markdown**, using the following format:
-
-        ```markdown
-        ## Summary of Current Implementation
-        [Short summary of where and how the relevant code is implemented.]
-
+        
+        ## Tool Usage
+        
+        - Use Bash commands via the dev container tools to analyze the repository and inspect the code.
+        
+        **Samples**:
+        - To analyze a file, you might use: `cat /workspace/repository/path/to/file.cs`
+        - To find all files with a content: `grep -r "search_term" /workspace/repository/`
+        
         ---
-
-        ## Required Code Changes
-
-        - [ ] **File**: `relative/path/to/File.cs`
-          - **Change**: [E.g. Rename `Send` method to `SendAsync`]
-          - **Location**: Line 42
-          - **Before**:
-            ```csharp
-            public void Send(string message)
-            ```
-          - **After**:
-            ```csharp
-            public async Task SendAsync(string message)
-            ```
-          - **Notes**: [Optional — interface impact, reflection use, dynamic dispatch, etc.]
-
-        - [ ] **File**: ...
-        ```
+        
         """;
 
     public static class OutputEvents
@@ -85,25 +99,31 @@ public class ChangeAnalyzeStep : KernelProcessStep
         var logger = kernel.GetRequiredService<ILogger<InputCheckStep>>();
         logger.LogInformation("Analyze changes");
 
-        var prompt = SYSTEM_PROMPT.Replace("{Requirement}", codingProcessContext.Requirement);
-        var chatHistory = new ChatHistory(prompt);
-        chatHistory.AddSystemMessage($"Container: {codingProcessContext.ContainerName}");
-        chatHistory.AddUserMessage($"Repository: {codingProcessContext.RepositoryName}");
+        var chatHistory = new ChatHistory();
+        chatHistory.AddSystemMessage($"DevContainerName: {codingProcessContext.ContainerName}");
+        chatHistory.AddSystemMessage($"RepositoryName: {codingProcessContext.RepositoryName}");
 
-        var settings = new OllamaPromptExecutionSettings
+        var thread = new ChatHistoryAgentThread(chatHistory);
+        
+        var agent = new ChatCompletionAgent()
         {
-            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
+            Kernel = kernel,
+            InstructionsRole = AuthorRole.Developer,
+            Instructions = SYSTEM_PROMPT,
+            Arguments = new KernelArguments(
+                new OllamaPromptExecutionSettings
+                {
+                    FunctionChoiceBehavior = FunctionChoiceBehavior.Required()
+                })
         };
-        var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
-        var response = await chatCompletionService.GetChatMessageContentAsync(chatHistory, settings, kernel);
 
-        if (response is null)
+        var sb = new StringBuilder();
+        await foreach (var result in agent.InvokeAsync(codingProcessContext.Requirement, thread))
         {
-            throw new InvalidOperationException("Chat completion response is null.");
+            sb.AppendLine(result.Message.Content);
         }
 
-        codingProcessContext.PlannedChanges = response.Content;
-
+        codingProcessContext.PlannedChanges = sb.ToString();
         await context.EmitEventAsync(OutputEvents.CHANGE_ANALYSIS_FINISHED, data: codingProcessContext);
     }
 }
