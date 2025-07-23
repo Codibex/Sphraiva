@@ -26,6 +26,7 @@ public class ImplementationStep : KernelProcessStep
         - Respond in Markdown format, using code blocks for code changes and clear file references.
         """;
 
+
     public static class OutputEvents
     {
         public const string CHANGE_ANALYSIS_FINISHED = nameof(CHANGE_ANALYSIS_FINISHED);
