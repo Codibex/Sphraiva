@@ -1,5 +1,6 @@
 using MCP.Host.Plugins;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents;
 using OllamaSharp;
 
 namespace MCP.Host.Services;
@@ -9,19 +10,39 @@ public class KernelFactory(IServiceProvider services, IMcpPluginCache pluginCach
     public Kernel Create(bool withPlugins = true)
     {
         var ollamaClient = services.GetRequiredService<OllamaApiClient>();
-        var kernelBuilder = Kernel.CreateBuilder();
-        kernelBuilder.Services.AddLogging(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
+        var kernelBuilder = CreateKernelBuilder();
+
         kernelBuilder
-            .AddOllamaChatClient(ollamaClient)
+            //.AddOllamaChatClient(ollamaClient)
             .AddOllamaChatCompletion(ollamaClient)
-            .AddOllamaTextGeneration(ollamaClient)
-            .AddOllamaEmbeddingGenerator(ollamaClient);
+            //.AddOllamaTextGeneration(ollamaClient)
+            //.AddOllamaEmbeddingGenerator(ollamaClient)
+            ;
 
         AddPlugins(withPlugins, kernelBuilder);
 
-        kernelBuilder.Services.AddSingleton<IChatHistoryProvider, ChatHistoryProvider>();
+        return kernelBuilder.Build();
+    }
+
+    public Kernel CreateAgentGroupChatKernel(AgentGroupChat chat)
+    {
+        var ollamaClient = services.GetRequiredService<OllamaApiClient>();
+        var kernelBuilder = CreateKernelBuilder();
+
+        kernelBuilder
+            .AddOllamaChatCompletion(ollamaClient);
+
+        kernelBuilder.Services.AddSingleton(chat);
 
         return kernelBuilder.Build();
+    }
+
+    private static IKernelBuilder CreateKernelBuilder()
+    {
+        var kernelBuilder = Kernel.CreateBuilder();
+        kernelBuilder.Services.AddLogging(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
+        kernelBuilder.Services.AddSingleton<IChatHistoryProvider, ChatHistoryProvider>();
+        return kernelBuilder;
     }
 
     private void AddPlugins(bool withPlugins, IKernelBuilder kernelBuilder)
