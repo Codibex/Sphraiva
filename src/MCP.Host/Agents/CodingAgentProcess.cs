@@ -109,6 +109,8 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Codi
             .EmitExternalEvent(proxyStep, "PublishDocumentation")
             .StopProcess();
 
+        // -------------------
+
         _kernel = kernelProvider.Get();
         _processMessageChannel = new CodingAgentProcessMessageChannel(implementationTask.ConnectionId, hubContext);
 
