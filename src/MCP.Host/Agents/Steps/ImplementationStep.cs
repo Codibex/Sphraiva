@@ -69,7 +69,7 @@ public class ImplementationStep : KernelProcessStep
 
     public static class OutputEvents
     {
-        public const string CHANGE_ANALYSIS_FINISHED = nameof(CHANGE_ANALYSIS_FINISHED);
+        public const string IMPLEMENTATION_FINISHED = nameof(IMPLEMENTATION_FINISHED);
     }
 
     [KernelFunction]
@@ -105,6 +105,6 @@ public class ImplementationStep : KernelProcessStep
 
         codingProcessContext.AppliedChanges = sb.ToString();
 
-        await context.EmitEventAsync(OutputEvents.CHANGE_ANALYSIS_FINISHED, data: codingProcessContext);
+        await context.EmitEventAsync(OutputEvents.IMPLEMENTATION_FINISHED, data: codingProcessContext);
     }
 }
