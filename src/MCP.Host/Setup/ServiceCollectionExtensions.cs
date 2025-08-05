@@ -23,19 +23,7 @@ public static class ServiceCollectionExtensions
                 : configuration["LLM_MODEL"]!)
         );
 
-        services.AddTransient(sp =>
-        {
-            var ollamaClient = sp.GetRequiredService<OllamaApiClient>();
-            var kernelBuilder = Kernel.CreateBuilder();
-            kernelBuilder.Services.AddLogging(c => c.AddConsole().SetMinimumLevel(LogLevel.Information));
-            kernelBuilder
-                .AddOllamaChatClient(ollamaClient)
-                .AddOllamaChatCompletion(ollamaClient)
-                .AddOllamaTextGeneration(ollamaClient)
-                .AddOllamaEmbeddingGenerator(ollamaClient);
-            return kernelBuilder.Build();
-        });
-        services.AddTransient<IKernelProvider, KernelProvider>();
+        services.AddTransient<IKernelFactory, KernelFactory>();
 
         return services;
     }

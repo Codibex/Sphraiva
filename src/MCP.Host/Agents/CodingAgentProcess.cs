@@ -16,7 +16,7 @@ public static class CodingAgentProcessTopics
     public const string REQUEST_REQUIREMENT_UPDATE = nameof(REQUEST_REQUIREMENT_UPDATE);
 }
 
-public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<CodingAgentHub, ICodingAgentHub> hubContext)
+public class CodingAgentProcess(IKernelFactory kernelFactory, IHubContext<CodingAgentHub, ICodingAgentHub> hubContext)
 {
     private KernelProcess? _process;
     private Kernel? _kernel;
@@ -111,7 +111,7 @@ public class CodingAgentProcess(IKernelProvider kernelProvider, IHubContext<Codi
 
         // -------------------
 
-        _kernel = kernelProvider.Get();
+        _kernel = kernelFactory.Create();
         _processMessageChannel = new CodingAgentProcessMessageChannel(implementationTask.ConnectionId, hubContext);
 
         _process = processBuilder.Build();

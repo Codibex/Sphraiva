@@ -15,9 +15,9 @@ public static class Endpoints
     public static void MapEndpoints(this WebApplication app)
     {
         app.MapPost("/chat",
-            async (ChatRequest request, IKernelProvider kernelProvider, CancellationToken cancellationToken) =>
+            async (ChatRequest request, IKernelFactory kernelFactory, CancellationToken cancellationToken) =>
             {
-                var kernel = kernelProvider.Get();
+                var kernel = kernelFactory.Create();
 
                 var settings = new OllamaPromptExecutionSettings
                 {
@@ -32,9 +32,9 @@ public static class Endpoints
                 return Results.Ok(value);
             });
 
-        app.MapPost("/function-test", async (IKernelProvider kernelProvider, CancellationToken cancellationToken) =>
+        app.MapPost("/function-test", async (IKernelFactory kernelFactory, CancellationToken cancellationToken) =>
         {
-            var kernel = kernelProvider.Get();
+            var kernel = kernelFactory.Create();
             if (kernel.Plugins.TryGetFunction("Sphraiva", "read_file", out var func))
             {
                 var result = await func.InvokeAsync(new KernelArguments
@@ -48,7 +48,7 @@ public static class Endpoints
         });
 
         app.MapPost("/agent/chat", async (HeaderValueProvider headerValueProvider, ChatRequest request,
-                IKernelProvider kernelProvider, VectorStoreTextSearch<TextParagraph> textSearchStore,
+                IKernelFactory kernelFactory, VectorStoreTextSearch<TextParagraph> textSearchStore,
                 ChatCache chatCache, HttpResponse response, CancellationToken cancellationToken) =>
             {
                 response.ContentType = MediaTypeNames.Text.EventStream;
@@ -56,7 +56,7 @@ public static class Endpoints
                 var chatId = headerValueProvider.ChatId!.Value;
                 var thread = chatCache.GetOrCreateThread(chatId);
 
-                var kernel = kernelProvider.Get();
+                var kernel = kernelFactory.Create();
 
                 ChatCompletionAgent agent =
                     new()
@@ -112,13 +112,13 @@ public static class Endpoints
             .AddEndpointFilter<RequireChatIdEndpointFilter>();
 
         app.MapPost("/agent/code", async (HeaderValueProvider headerValueProvider, ChatRequest request,
-                IKernelProvider kernelProvider, ChatCache chatCache, HttpResponse response,
+                IKernelFactory kernelFactory, ChatCache chatCache, HttpResponse response,
                 CancellationToken cancellationToken) =>
             {
                 var chatId = headerValueProvider.ChatId!.Value;
                 var thread = chatCache.GetOrCreateThread(chatId);
 
-                var kernel = kernelProvider.Get();
+                var kernel = kernelFactory.Create();
 
                 ChatCompletionAgent agent =
                     new()

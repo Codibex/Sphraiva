@@ -78,7 +78,6 @@ public class ImplementationStep : KernelProcessStep
         var logger = kernel.GetRequiredService<ILogger<InputCheckStep>>();
         logger.LogInformation("Implement planned changes");
 
-
         var chatHistory = new ChatHistory();
         chatHistory.AddSystemMessage($"DevContainerName: {codingProcessContext.ContainerName}");
         chatHistory.AddSystemMessage($"RepositoryName: {codingProcessContext.RepositoryName}");
