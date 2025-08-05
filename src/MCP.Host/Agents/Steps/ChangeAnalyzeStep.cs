@@ -24,6 +24,8 @@ public class ChangeAnalyzeStep : KernelProcessStep
         - Creating a detailed change plan for implementation
         - Focusing on the repository code only, without external dependencies or assumptions
         
+        ---
+        
         ## Environment
         
         A Docker development container with a freshly cloned repository is already available. The container name is available in the chat.
@@ -105,7 +107,7 @@ public class ChangeAnalyzeStep : KernelProcessStep
 
         var thread = new ChatHistoryAgentThread(chatHistory);
         
-        var agent = new ChatCompletionAgent()
+        var agent = new ChatCompletionAgent
         {
             Kernel = kernel,
             InstructionsRole = AuthorRole.Developer,
