@@ -186,9 +186,9 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         ### Constraints
         
-        - Never answer user requirements directly.
-        - Never provide code suggestions or solutions.
-        - Only delegate tasks to other agents and monitor their progress.
+        - Capture information provided by the user for their scheduling request.
+        - Request confirmation without suggesting additional details.
+        - Never provide a direct answer to the user's request.
         
         ---
         
