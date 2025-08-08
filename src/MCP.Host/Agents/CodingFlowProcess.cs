@@ -39,10 +39,11 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
              - {{{IMPLEMENTATION_AGENT_NAME}}}
              
              Always follow these rules when selecting the next participant:
-             - After user input, it is {{{ANALYSIS_AGENT_NAME}}}'s turn.
-             - After {{{ANALYSIS_AGENT_NAME}}}, it is {{{IMPLEMENTATION_AGENT_NAME}}}'s turn.
-             - After {{{IMPLEMENTATION_AGENT_NAME}}}, it is {{{ANALYSIS_AGENT_NAME}}}'s turn.
-
+             - First, the {{{ANALYSIS_AGENT_NAME}}} must analyze and provide a detailed change plan.
+             - Once the change plan is provided, {{{IMPLEMENTATION_AGENT_NAME}}} implements the changes.
+             - If {{{IMPLEMENTATION_AGENT_NAME}}} has questions about the change plan, {{{ANALYSIS_AGENT_NAME}}} answers.
+             - After {{{ANALYSIS_AGENT_NAME}}} has answered a question from {{{IMPLEMENTATION_AGENT_NAME}}}, it is {{{IMPLEMENTATION_AGENT_NAME}}}'s turn again.
+             
              History:
              {{$history}}
              """);
@@ -227,6 +228,7 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         ## Objective
         
         Analyze the user requirement and compare it with the current state of the repository in the development container.
+        Start by scanning the workspace directory.
         Include all files in your analysis, regardless of their type or extension.
         Use Bash commands via the dev container tools to examine the repository contents.
         Your goal is to produce a concrete change plan that can be passed to a coding agent for implementation.
@@ -418,34 +420,36 @@ public class ManagerAgentStep : KernelProcessStep
 
     private static async Task<IntentResult> IsRequestingUserInputAsync(Kernel kernel, ChatHistory history, ILogger logger)
     {
-        ChatHistory localHistory =
-        [
-            new ChatMessageContent(AuthorRole.System, "Analyze the conversation and determine if user input is being solicited. Please respond with a JSON object containing only the following fields: IsRequestingUserInput, IsWorking and Rationale. Fill out the properties in all situations."),
-            .. history.TakeLast(1)
-        ];
+        await Task.CompletedTask;
+        return new IntentResult(false, true, string.Empty);
+        //ChatHistory localHistory =
+        //[
+        //    new ChatMessageContent(AuthorRole.System, "Analyze the conversation and determine if user input is being solicited. Please respond with a JSON object containing only the following fields: IsRequestingUserInput, IsWorking and Rationale. Fill out the properties in all situations."),
+        //    .. history.TakeLast(1)
+        //];
 
-        IChatCompletionService service = kernel.GetRequiredService<IChatCompletionService>();
+        //IChatCompletionService service = kernel.GetRequiredService<IChatCompletionService>();
 
-        ChatMessageContent response = await service.GetChatMessageContentAsync(localHistory);
-        var rawText = response.ToString();
-        if (string.IsNullOrWhiteSpace(rawText))
-        {
-            logger.LogError("Response is not valid");
-            return new IntentResult(false, true, string.Empty);
-        }
+        //ChatMessageContent response = await service.GetChatMessageContentAsync(localHistory);
+        //var rawText = response.ToString();
+        //if (string.IsNullOrWhiteSpace(rawText))
+        //{
+        //    logger.LogError("Response is not valid");
+        //    return new IntentResult(false, true, string.Empty);
+        //}
 
-        try
-        {
-            IntentResult intent = JsonSerializer.Deserialize<IntentResult>(response.ToString())!;
-            logger.LogTrace("{StepName} Response Intent - {IsRequestingUserInput}: {Rationale}", nameof(ManagerAgentStep), intent.IsRequestingUserInput, intent.Rationale);
-            return intent;
-            
-        }
-        catch
-        {
-            logger.LogError("Response is not valid: {rawText}", rawText);
-            return new IntentResult(false, true, string.Empty);
-        }
+        //try
+        //{
+        //    IntentResult intent = JsonSerializer.Deserialize<IntentResult>(response.ToString())!;
+        //    logger.LogTrace("{StepName} Response Intent - {IsRequestingUserInput}: {Rationale}", nameof(ManagerAgentStep), intent.IsRequestingUserInput, intent.Rationale);
+        //    return intent;
+
+        //}
+        //catch
+        //{
+        //    logger.LogError("Response is not valid: {rawText}", rawText);
+        //    return new IntentResult(false, true, string.Empty);
+        //}
     }
 
     [DisplayName("IntentResult")]
