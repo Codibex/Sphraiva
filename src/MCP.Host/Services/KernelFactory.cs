@@ -24,7 +24,7 @@ public class KernelFactory(IServiceProvider services, IMcpPluginCache pluginCach
         return kernelBuilder.Build();
     }
 
-    public Kernel CreateAgentGroupChatKernel(AgentGroupChat chat)
+    public Kernel CreateAgentGroupChatKernel(ChatCompletionAgent managerAgent, AgentGroupChat chat)
     {
         var ollamaClient = services.GetRequiredService<OllamaApiClient>();
         var kernelBuilder = CreateKernelBuilder();
@@ -32,6 +32,7 @@ public class KernelFactory(IServiceProvider services, IMcpPluginCache pluginCach
         kernelBuilder
             .AddOllamaChatCompletion(ollamaClient);
 
+        kernelBuilder.Services.AddKeyedSingleton("ManagerKey", managerAgent);
         kernelBuilder.Services.AddSingleton(chat);
 
         return kernelBuilder.Build();

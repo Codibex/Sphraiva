@@ -15,6 +15,9 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
     {
         // Plugin parameter can be false and added for specific agents
         var kernel = kernelFactory.Create(true);
+        
+        const string MANAGER_AGENT_NAME = "MANAGER_AGENT";
+        var managerAgent = CreateAgent(MANAGER_AGENT_NAME, MANAGER_AGENT_INSTRUCTIONS, kernel.Clone());
 
         const string ANALYSIS_AGENT_NAME = "ANALYSIS_AGENT";
         var analysisAgent = CreateAgent(ANALYSIS_AGENT_NAME, ANALYSIS_AGENT_INSTRUCTIONS, kernel.Clone());
@@ -70,7 +73,7 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
             }
         };
 
-        var kernel2 = kernelFactory.CreateAgentGroupChatKernel(chat);
+        var kernel2 = kernelFactory.CreateAgentGroupChatKernel(managerAgent, chat);
         ProcessBuilder processBuilder = new($"CodingAgent-{parameter.ChatId}");
 
         IExternalKernelProcessMessageChannel processMessageChannel = new CodingAgentProcessMessageChannel(parameter.ConnectionId, hubContext);
@@ -98,6 +101,14 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
                     Temperature = 0
                 })
         };
+
+    private const string MANAGER_AGENT_INSTRUCTIONS =
+        """
+        Capture information provided by the user for their requirement request.
+        Request confirmation without suggesting additional details.
+        Once confirmed inform them you're working on the request.
+        Never provide a direct answer to the user's request.
+        """;
 
     private const string ANALYSIS_AGENT_INSTRUCTIONS =
         """

@@ -6,5 +6,5 @@ namespace MCP.Host.Services;
 public interface IKernelFactory
 {
     Kernel Create(bool withPlugins = true);
-    Kernel CreateAgentGroupChatKernel(AgentGroupChat chat);
+    Kernel CreateAgentGroupChatKernel(ChatCompletionAgent managerAgent, AgentGroupChat chat);
 }
