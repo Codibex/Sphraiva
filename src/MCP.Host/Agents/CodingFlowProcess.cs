@@ -16,8 +16,6 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
 {
     public async Task RunAsync(FlowParameter parameter)
     {
-
-
         // Plugin parameter can be false and added for specific agents
         var kernel = kernelFactory.Create(true);
         
