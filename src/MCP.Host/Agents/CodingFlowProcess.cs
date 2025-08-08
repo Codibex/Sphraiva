@@ -64,14 +64,16 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
                 SelectionStrategy = new KernelFunctionSelectionStrategy(selectionFunction, kernel)
                 {
                     HistoryVariableName = "history",
-                    ResultParser = (r) => r.GetValue<string>() ?? string.Empty
+                    ResultParser = (r) => r.GetValue<string>() ?? string.Empty,
+                    InitialAgent = analysisAgent
                 },
                 TerminationStrategy = new KernelFunctionTerminationStrategy(terminationFunction, kernel)
                 {
                     HistoryVariableName = "history",
                     ResultParser = (r) =>
                         r.GetValue<string>()?.Contains("completed flow", StringComparison.InvariantCultureIgnoreCase) ??
-                        false
+                        false,
+                    MaximumIterations = 1000
                 }
             }
         };
