@@ -7,11 +7,7 @@ using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.Chat;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Ollama;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
-using System;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Reflection.Metadata;
 using System.Text.Json;
 
 namespace MCP.Host.Agents;
@@ -479,7 +475,7 @@ public class AgentGroupChatStep : KernelProcessStep
 
         await foreach (ChatMessageContent response in chat.InvokeAsync())
         {
-            await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupMessage, Data = response });
+           await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupMessage, Data = response });
         }
 
         ChatMessageContent[] history = await chat.GetChatMessagesAsync().Reverse().ToArrayAsync();
