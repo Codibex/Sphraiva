@@ -40,7 +40,12 @@ public class SetupInfrastructureStep : KernelProcessStep
         await CloneRepositoryAsync(plugin, codingProcessContext);
 
 
-        await context.EmitEventAsync(OutputEvents.SETUP_INFRASTRUCTURE_SUCCEEDED, data: codingProcessContext);
+        await context.EmitEventAsync(OutputEvents.SETUP_INFRASTRUCTURE_SUCCEEDED, data: new
+        {
+            codingProcessContext.RepositoryName,
+            codingProcessContext.ContainerName,
+            codingProcessContext.Requirement
+        });
     }
 
     private static async Task<object?> CreateContainerAsync(KernelPlugin plugin, InputCheckResult input)
