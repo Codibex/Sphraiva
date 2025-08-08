@@ -36,6 +36,7 @@ builder.Services.AddResponseCompression(options =>
 });
 
 builder.Services.AddTransient<CodingAgentProcess>();
+builder.Services.AddTransient<CodingFlowProcess>();
 builder.Services.AddHostedService<CodingAgentBackgroundService>();
 builder.Services.AddSingleton<ICodingAgentChannel, CodingAgentChannel>();
 builder.Services.AddSingleton<ICodingAgentProcessStore, CodingAgentProcessStore>();
