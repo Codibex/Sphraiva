@@ -170,6 +170,8 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         Request confirmation without suggesting additional details.
         Once confirmed inform them you're working on the request.
         Never provide a direct answer to the user's request.
+        
+        It is not possible to ask the user anything.
         """;
 
     private const string ANALYSIS_AGENT_INSTRUCTIONS =
@@ -197,6 +199,8 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         You can access the development container using the provided dev container tool.
         Bash commands can be executed in the development container with the dev container tools (e.g., run command in dev container) to inspect the repository and gather information.
+        
+        It is not possible to ask the user anything.
         
         ---
         
@@ -278,6 +282,8 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         You can access the development container using the provided dev container tool.
         Bash commands can be executed in the development container with the dev container tools (e.g., run command in dev container) to inspect the repository, gather information make changes and manage the repository.
+        
+        It is not possible to ask the user anything.
         
         ---
         
