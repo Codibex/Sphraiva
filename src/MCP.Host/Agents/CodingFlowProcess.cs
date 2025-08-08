@@ -395,18 +395,32 @@ public class ManagerAgentStep : KernelProcessStep
     {
         ChatHistory localHistory =
         [
-            new ChatMessageContent(AuthorRole.System, "Analyze the conversation and determine if user input is being solicited."),
+            new ChatMessageContent(AuthorRole.System, "Analyze the conversation and determine if user input is being solicited. Please respond with a JSON object containing only the following fields: IsRequestingUserInput, IsWorking and Rationale. Fill out the properties in all situations."),
             .. history.TakeLast(1)
         ];
 
         IChatCompletionService service = kernel.GetRequiredService<IChatCompletionService>();
 
         ChatMessageContent response = await service.GetChatMessageContentAsync(localHistory);
-        IntentResult intent = JsonSerializer.Deserialize<IntentResult>(response.ToString())!;
+        var rawText = response.ToString();
+        if (string.IsNullOrWhiteSpace(rawText))
+        {
+            logger.LogError("Response is not valid");
+            return new IntentResult(false, true, string.Empty);
+        }
 
-        logger.LogTrace("{StepName} Response Intent - {IsRequestingUserInput}: {Rationale}", nameof(ManagerAgentStep), intent.IsRequestingUserInput, intent.Rationale);
-
-        return intent;
+        try
+        {
+            IntentResult intent = JsonSerializer.Deserialize<IntentResult>(response.ToString())!;
+            logger.LogTrace("{StepName} Response Intent - {IsRequestingUserInput}: {Rationale}", nameof(ManagerAgentStep), intent.IsRequestingUserInput, intent.Rationale);
+            return intent;
+            
+        }
+        catch
+        {
+            logger.LogError("Response is not valid: {rawText}", rawText);
+            return new IntentResult(false, true, string.Empty);
+        }
     }
 
     [DisplayName("IntentResult")]
