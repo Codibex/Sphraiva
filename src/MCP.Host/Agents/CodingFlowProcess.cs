@@ -226,7 +226,6 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         ## Objective
         
-        Start by scanning the workspace directory.
         Analyze the user requirement and compare it with the current state of the repository in the development container.
         Include all files in your analysis, regardless of their type or extension.
         Use Bash commands via the dev container tools to examine the repository contents.
