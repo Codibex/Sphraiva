@@ -6,6 +6,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.Chat;
 using Microsoft.SemanticKernel.Connectors.Ollama;
+using System.Reflection.Metadata;
 
 namespace MCP.Host.Agents;
 
@@ -13,6 +14,8 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
 {
     public async Task RunAsync(FlowParameter parameter)
     {
+
+
         // Plugin parameter can be false and added for specific agents
         var kernel = kernelFactory.Create(true);
         
@@ -74,11 +77,11 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         };
 
         var kernel2 = kernelFactory.CreateAgentGroupChatKernel(managerAgent, chat);
-        ProcessBuilder processBuilder = new($"CodingAgent-{parameter.ChatId}");
-
+        
+        KernelProcess process = SetupProcess(parameter.ChatId);
         IExternalKernelProcessMessageChannel processMessageChannel = new CodingAgentProcessMessageChannel(parameter.ConnectionId, hubContext);
 
-        var process = processBuilder.Build();
+        
         await process.StartAsync(kernel2,
             new KernelProcessEvent
             {
@@ -86,6 +89,13 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
                 Data = parameter.Requirement
             },
             processMessageChannel);
+    }
+
+    private KernelProcess SetupProcess(Guid chatId)
+    {
+        ProcessBuilder processBuilder = new($"CodingAgent-{chatId}");
+
+        return processBuilder.Build();
     }
 
     private static ChatCompletionAgent CreateAgent(string agentName, string instructions, Kernel kernel) =>
