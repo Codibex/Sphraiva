@@ -371,7 +371,7 @@ public class ManagerAgentStep : KernelProcessStep
         // Summarize the conversation with the user to use as input to the agent group
         string summary = await SummarizeHistoryAsync(kernel, ReducerServiceKey, history);
 
-        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupInput, Data = summary });
+        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupInput, Data = string.Join(Environment.NewLine, history) });
     }
 
     [KernelFunction(ProcessStepFunctions.ReceiveResponse)]
