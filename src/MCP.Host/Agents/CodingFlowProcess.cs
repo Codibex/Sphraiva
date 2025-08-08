@@ -32,14 +32,13 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
             $$$"""
              Determine which participant takes the next turn in a conversation based on the the most recent participant.
              State only the name of the participant to take the next turn.
-             No participant should take more than one turn in a row.
              
              Choose only from these participants:
              - {{{ANALYSIS_AGENT_NAME}}}
              - {{{IMPLEMENTATION_AGENT_NAME}}}
              
              Always follow these rules when selecting the next participant:
-             - First, the {{{ANALYSIS_AGENT_NAME}}} must analyze and provide a detailed change plan.
+             - After the user input, the {{{ANALYSIS_AGENT_NAME}}} must analyze and provide a detailed change plan.
              - Once the change plan is provided, {{{IMPLEMENTATION_AGENT_NAME}}} implements the changes.
              - If {{{IMPLEMENTATION_AGENT_NAME}}} has questions about the change plan, {{{ANALYSIS_AGENT_NAME}}} answers.
              - After {{{ANALYSIS_AGENT_NAME}}} has answered a question from {{{IMPLEMENTATION_AGENT_NAME}}}, it is {{{IMPLEMENTATION_AGENT_NAME}}}'s turn again.
@@ -227,8 +226,8 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         ## Objective
         
-        Analyze the user requirement and compare it with the current state of the repository in the development container.
         Start by scanning the workspace directory.
+        Analyze the user requirement and compare it with the current state of the repository in the development container.
         Include all files in your analysis, regardless of their type or extension.
         Use Bash commands via the dev container tools to examine the repository contents.
         Your goal is to produce a concrete change plan that can be passed to a coding agent for implementation.
