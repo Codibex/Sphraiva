@@ -22,9 +22,9 @@ public class SetupInfrastructureStep : KernelProcessStep
             throw new InvalidOperationException($"{PluginDescriptions.SphraivaPlugin.NAME} plugin is not available.");
         }
 
-        var result = await CreateContainerAsync(plugin, input);
+        var containerCreationResult = await CreateContainerAsync(plugin, input);
 
-        var match = Regex.Match(result!.ToString()!, @"Started container successfully: (\S+)");
+        var match = Regex.Match(containerCreationResult, @"Started container successfully: (\S+)");
         if (!match.Success)
         {
             throw new InvalidOperationException("Failed to parse container creation result.");
@@ -37,18 +37,19 @@ public class SetupInfrastructureStep : KernelProcessStep
             Requirement = input.Requirement
         };
 
-        await CloneRepositoryAsync(plugin, codingProcessContext);
+        var cloneRepositoryResult = await CloneRepositoryAsync(plugin, codingProcessContext);
 
 
         await context.EmitEventAsync(OutputEvents.SETUP_INFRASTRUCTURE_SUCCEEDED, data: new
         {
             codingProcessContext.RepositoryName,
             codingProcessContext.ContainerName,
-            codingProcessContext.Requirement
+            codingProcessContext.Requirement,
+            RepositoryCloneResult = cloneRepositoryResult
         });
     }
 
-    private static async Task<object?> CreateContainerAsync(KernelPlugin plugin, InputCheckResult input)
+    private static async Task<string> CreateContainerAsync(KernelPlugin plugin, InputCheckResult input)
     {
         if (!plugin.TryGetFunction(PluginDescriptions.SphraivaPlugin.Functions.CREATE_DEV_CONTAINER, out var function))
         {
@@ -60,10 +61,11 @@ public class SetupInfrastructureStep : KernelProcessStep
             ["instructionName"] = input.InstructionName,
         };
 
-        return await function.InvokeAsync(arguments);
+        var rawResponse = await function.InvokeAsync(arguments);
+        return rawResponse?.ToString() ?? string.Empty;
     }
 
-    private static async Task CloneRepositoryAsync(KernelPlugin plugin, CodingProcessContext codingProcessContext)
+    private static async Task<string> CloneRepositoryAsync(KernelPlugin plugin, CodingProcessContext codingProcessContext)
     {
         if (!plugin.TryGetFunction(PluginDescriptions.SphraivaPlugin.Functions.CLONE_REPOSITORY_IN_DEV_CONTAINER, out var function))
         {
@@ -76,6 +78,7 @@ public class SetupInfrastructureStep : KernelProcessStep
             ["repositoryName"] = codingProcessContext.RepositoryName,
         };
 
-        await function.InvokeAsync(arguments);
+        var rawResponse = await function.InvokeAsync(arguments);
+        return rawResponse?.ToString() ?? string.Empty;
     }
 }
