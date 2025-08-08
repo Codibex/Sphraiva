@@ -365,14 +365,16 @@ public class ManagerAgentStep : KernelProcessStep
         ChatHistoryAgentThread agentThread = new(history);
 
         // Obtain the agent response
-        ChatCompletionAgent agent = GetAgent<ChatCompletionAgent>(kernel, AgentServiceKey);
-        await foreach (ChatMessageContent message in agent.InvokeAsync(new ChatMessageContent(AuthorRole.User, userInput), agentThread))
-        {
-            // Both the input message and response message will automatically be added to the thread, which will update the internal chat history.
+        //ChatCompletionAgent agent = GetAgent<ChatCompletionAgent>(kernel, AgentServiceKey);
+        //await foreach (ChatMessageContent message in agent.InvokeAsync(new ChatMessageContent(AuthorRole.User, userInput), agentThread))
+        //{
+        //    // Both the input message and response message will automatically be added to the thread, which will update the internal chat history.
 
-            // Emit event for each agent response
-            await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.AgentResponse, Data = message });
-        }
+        //    // Emit event for each agent response
+        //    await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.AgentResponse, Data = message });
+        //}
+
+        history.AddUserMessage(userInput);
 
         // Evaluate current intent
         IntentResult intent = await IsRequestingUserInputAsync(kernel, history, logger);
@@ -394,10 +396,7 @@ public class ManagerAgentStep : KernelProcessStep
         IChatHistoryProvider historyProvider = GetHistory(kernel);
         ChatHistory history = historyProvider.Get();
 
-        // Summarize the conversation with the user to use as input to the agent group
-        string summary = await SummarizeHistoryAsync(kernel, ReducerServiceKey, history);
-
-        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupInput, Data = string.Join(Environment.NewLine, history) });
+        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupInput, Data = history.First() });
     }
 
     [KernelFunction(ProcessStepFunctions.ReceiveResponse)]
