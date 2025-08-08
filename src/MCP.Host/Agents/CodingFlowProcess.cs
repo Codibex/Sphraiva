@@ -184,6 +184,14 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         ---
         
+        ### Constraints
+        
+        - Never answer user requirements directly.
+        - Never provide code suggestions or solutions.
+        - Only delegate tasks to other agents and monitor their progress.
+        
+        ---
+        
         """;
 
     private const string ANALYSIS_AGENT_INSTRUCTIONS =
