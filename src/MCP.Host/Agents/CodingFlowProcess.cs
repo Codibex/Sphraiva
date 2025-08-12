@@ -342,6 +342,7 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         ## Objective
         
+        Creating a new branch is required to implement the planned changes in the repository.
         Create a new branch named using the pattern feature/<short-description> (e.g., feature/rename-send-method).
         Analyze the planned changes provided in the chat and implement them in the repository within the development container.
         Use Bash commands via the dev container tools to modify files, commit changes, and manage the repository.
@@ -374,6 +375,20 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
           - "Implementation complete."
         This ensures the process remains active and prevents timeouts.
         
+        ---
+        
+        ## Output Format
+        
+        Your implementation steps must include:
+        1. Branch Creation
+           - Show the branch.
+        3. Commit and Push
+           - Show the commit messages.
+        4. Build and Test
+           - Show build and test results.
+        5. Completion Phrase
+           - End with "Implementation complete." or "Implementation not complete. Continuing work."
+           
         ---
         
         ## Tool Usage
