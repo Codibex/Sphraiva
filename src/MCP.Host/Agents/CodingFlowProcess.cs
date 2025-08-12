@@ -39,6 +39,7 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
              
              Always follow these rules when selecting the next participant:
              - After the user input, the {{{ANALYSIS_AGENT_NAME}}} must analyze and provide a detailed change plan.
+             - If the analysis agent's last message contains "Change plan not ready", "Continuing analysis", "Analysis in progress", or does not contain "Change plan complete", it remains the analysis agent's turn.
              - Once the change plan is provided and the phrase "Change plan complete" (or similar, e.g. "Plan complete", "Analysis finished") appears, the {{{IMPLEMENTATION_AGENT_NAME}}} implements the changes.
              - If {{{IMPLEMENTATION_AGENT_NAME}}} has questions about the change plan, {{{ANALYSIS_AGENT_NAME}}} answers.
              - After the {{{ANALYSIS_AGENT_NAME}}} has answered a question from the {{{IMPLEMENTATION_AGENT_NAME}}}, it is the {{{IMPLEMENTATION_AGENT_NAME}}}'s turn again.
@@ -266,7 +267,10 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         4. Special Notes
            - Mention any refactorings, compatibility concerns, external dependencies, or follow-up steps.
         
-        **At the end of your change plan, always add the phrase: "Change plan complete."**
+        If you need to gather more information before producing a change plan, clearly state what you are doing, but always end your message with either:
+        - "Change plan not ready. Continuing analysis."
+        or
+        - "Change plan complete."
         
         ---
         
