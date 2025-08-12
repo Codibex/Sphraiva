@@ -66,7 +66,14 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
                 SelectionStrategy = new KernelFunctionSelectionStrategy(selectionFunction, kernel)
                 {
                     HistoryVariableName = "history",
-                    ResultParser = (r) => r.GetValue<string>() ?? string.Empty,
+                    ResultParser = (r) => {
+                        var value = r.GetValue<string>()?.ToLowerInvariant() ?? string.Empty;
+                        if (value.Contains("change plan not ready") || value.Contains("continuing analysis") || value.Contains("analysis in progress"))
+                            return ANALYSIS_AGENT_NAME;
+                        if (value.Contains("change plan complete") || value.Contains("plan complete") || value.Contains("analysis finished"))
+                            return IMPLEMENTATION_AGENT_NAME;
+                        return ANALYSIS_AGENT_NAME;
+                    },
                     InitialAgent = analysisAgent
                 },
                 TerminationStrategy = new KernelFunctionTerminationStrategy(terminationFunction, kernel)
