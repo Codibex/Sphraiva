@@ -268,10 +268,12 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         4. Special Notes
            - Mention any refactorings, compatibility concerns, external dependencies, or follow-up steps.
         
-        If you need to gather more information before producing a change plan, clearly state what you are doing, but always end your message with either:
+        **IMPORTANT**:
+        At the end of your response, you MUST add one of the following phrases:
         - "Change plan not ready. Continuing analysis."
-        or
         - "Change plan complete."
+        
+        Never respond without one of these phrases at the end of your message.
         
         ---
         
