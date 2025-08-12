@@ -39,9 +39,9 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
              
              Always follow these rules when selecting the next participant:
              - After the user input, the {{{ANALYSIS_AGENT_NAME}}} must analyze and provide a detailed change plan.
-             - Once the change plan is provided, {{{IMPLEMENTATION_AGENT_NAME}}} implements the changes.
+             - Once the change plan is provided and the phrase "Change plan complete" (or similar, e.g. "Plan complete", "Analysis finished") appears, the {{{IMPLEMENTATION_AGENT_NAME}}} implements the changes.
              - If {{{IMPLEMENTATION_AGENT_NAME}}} has questions about the change plan, {{{ANALYSIS_AGENT_NAME}}} answers.
-             - After {{{ANALYSIS_AGENT_NAME}}} has answered a question from {{{IMPLEMENTATION_AGENT_NAME}}}, it is {{{IMPLEMENTATION_AGENT_NAME}}}'s turn again.
+             - After the {{{ANALYSIS_AGENT_NAME}}} has answered a question from the {{{IMPLEMENTATION_AGENT_NAME}}}, it is the {{{IMPLEMENTATION_AGENT_NAME}}}'s turn again.
              
              History:
              {{$history}}
@@ -265,6 +265,8 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
            - Describe each new file, its purpose, and initial contents.
         4. Special Notes
            - Mention any refactorings, compatibility concerns, external dependencies, or follow-up steps.
+        
+        **At the end of your change plan, always add the phrase: "Change plan complete."**
         
         ---
         
