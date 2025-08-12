@@ -263,14 +263,10 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         ## Response Frequency
         
-        
-        If your analysis or planning will take a long time, provide regular, incremental responses.
-        - After each major step or discovery, send an update.
-        - Always end each response with either:
-          - "Change plan not ready. Continuing analysis."
-          - "Change plan complete."
-        After every command or major step, send a response indicating progress, even if the result is not yet available. If a command fails or times out, report the error and continue analysis.
-        This ensures the process remains active and prevents timeouts.
+        You must always send a response, even if you are waiting for a command result, need more time, or have encountered an error. Never stop responding until you have completed the change plan. Always end your message with:
+        - "Change plan not ready. Continuing analysis."
+        or
+        - "Change plan complete."
         
         ---
         
