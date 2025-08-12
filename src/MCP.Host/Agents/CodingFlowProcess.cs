@@ -43,6 +43,7 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
              - Once the change plan is provided and the phrase "Change plan complete" (or similar, e.g. "Plan complete", "Analysis finished") appears, the {{{IMPLEMENTATION_AGENT_NAME}}} implements the changes.
              - If {{{IMPLEMENTATION_AGENT_NAME}}} has questions about the change plan, {{{ANALYSIS_AGENT_NAME}}} answers.
              - After the {{{ANALYSIS_AGENT_NAME}}} has answered a question from the {{{IMPLEMENTATION_AGENT_NAME}}}, it is the {{{IMPLEMENTATION_AGENT_NAME}}}'s turn again.
+             - If you cannot determine the next agent, default to {{{ANALYSIS_AGENT_NAME}}}.
              
              History:
              {{$history}}
