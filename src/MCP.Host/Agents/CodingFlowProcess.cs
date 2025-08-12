@@ -286,6 +286,11 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         - To find all files with a content: `grep -r "search_term" /workspace/repository/`
         
         ---
+        
+        **REMINDER:**  
+        Never respond without one of the required phrases at the end of your message.
+        
+        ---
         """;
 
     private const string IMPLEMENTATION_AGENT_INSTRUCTIONS =
