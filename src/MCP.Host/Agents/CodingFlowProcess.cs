@@ -254,6 +254,17 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         ---
         
+        ## Response Frequency
+        
+        If your analysis or planning will take a long time, provide regular, incremental responses.
+        - After each major step or discovery, send an update.
+        - Always end each response with either:
+          - "Change plan not ready. Continuing analysis."
+          - "Change plan complete."
+        This ensures the process remains active and prevents timeouts.
+        
+        ---
+        
         ## Output Format: Detailed Change Plan (Markdown)
         
         Your plan must include:
@@ -291,6 +302,7 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         Never respond without one of the required phrases at the end of your message.
         
         ---
+        
         """;
 
     private const string IMPLEMENTATION_AGENT_INSTRUCTIONS =
@@ -345,6 +357,17 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         - **Commit changes**: After implementing the changes, commit them with meaningful commit messages that reflect the changes made.
         - **Build and test**: Build the solution to verify that the changes are correct. Fix the issue while staying within the scope of the planned changes.
         - **Push changes**: After successful implementation and testing, push the changes to the remote repository.
+        
+        ---
+        
+        ## Response Frequency
+        
+        If your implementation will take a long time, provide regular, incremental responses.
+        - After each major step, code change, or test, send an update.
+        - Always end each response with either:
+          - "Implementation not complete. Continuing work."
+          - "Implementation complete."
+        This ensures the process remains active and prevents timeouts.
         
         ---
         
