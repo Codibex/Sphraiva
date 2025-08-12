@@ -374,9 +374,9 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         Your implementation steps must include:
         1. Branch Creation
            - Show the created branch name (e.g., feature/short-description).
-        2. Commit and Push
+        2. Commits
            - Show the commit messages.
-        3. Build and Test
+        3. Build and Test Results
            - Show build and test results.
         4. Completion Phrase
            - End with "Implementation complete." or "Implementation not complete. Continuing work."
