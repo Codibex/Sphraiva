@@ -11,7 +11,15 @@ internal class Worker(ILogger<Worker> logger, DataUploader dataUploader) : Backg
                 logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
             }
 
-            await ReadFilesAsync();
+            try
+            {
+                await ReadFilesAsync();
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Error occurred while reading files");
+            }
+            
             await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
         }
     }
