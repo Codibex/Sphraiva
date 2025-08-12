@@ -11,7 +11,7 @@ using System.ComponentModel;
 
 namespace MCP.Host.Agents;
 
-public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingAgentHub, ICodingAgentHub> hubContext)
+public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingAgentHub, ICodingAgentHub> hubContext, ILoggerFactory loggerFactory)
 {
     public async Task RunAsync(FlowParameter parameter)
     {
@@ -79,7 +79,8 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
                         false,
                     MaximumIterations = 1000
                 }
-            }
+            },
+            LoggerFactory = loggerFactory
         };
 
         var kernel2 = kernelFactory.CreateAgentGroupChatKernel(managerAgent, chat);
@@ -150,12 +151,13 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         return processBuilder.Build();
     }
 
-    private static ChatCompletionAgent CreateAgent(string agentName, string instructions, Kernel kernel) =>
+    private ChatCompletionAgent CreateAgent(string agentName, string instructions, Kernel kernel) =>
         new()
         {
             Name = agentName,
             Instructions = instructions,
             Kernel = kernel,
+            LoggerFactory = loggerFactory,
             Arguments = new KernelArguments(
                 new OllamaPromptExecutionSettings
                 {
