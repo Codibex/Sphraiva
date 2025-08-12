@@ -338,7 +338,9 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         Before making any changes, you must always create a new branch using the pattern feature/<short-description>. This is required for every implementation task.
         Analyze the planned changes provided in the chat and implement them in the repository within the development container.
         Use Bash commands via the dev container tools to modify files, commit changes, and manage the repository.
+        **Make small, focused commits for each logical change. Do not group unrelated changes into a single commit. Each commit message should clearly describe the change.**
         Ensure that all changes are made according to the provided change plan, maintaining code quality and consistency.
+        Build the solution and run the tests to ensure all changes are correct and do not break existing functionality.
         
         Note: All required inputs, such as the container name, repository name, and planned changes, are provided in the chat context.
         
