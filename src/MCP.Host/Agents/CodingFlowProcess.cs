@@ -287,7 +287,7 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         ---
         
-        **REMINDER:**  
+        **REMINDER**:
         Never respond without one of the required phrases at the end of your message.
         
         ---
