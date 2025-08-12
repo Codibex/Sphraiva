@@ -381,7 +381,8 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         Your implementation steps must include:
         1. Branch Creation
-           - Show the branch.
+           - Show the branch name.
+           - Always start your implementation by creating a new branch, even if the change plan does not mention it.
         3. Commit and Push
            - Show the commit messages.
         4. Build and Test
