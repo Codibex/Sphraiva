@@ -8,7 +8,6 @@ using Microsoft.SemanticKernel.Agents.Chat;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 using System.ComponentModel;
-using System.Text.Json;
 
 namespace MCP.Host.Agents;
 
@@ -33,19 +32,22 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
              Determine which participant takes the next turn in a conversation based on the the most recent participant.
              State only the name of the participant to take the next turn.
              
-             Choose only from these participants:
+             **Choose only from these participants**:
              - {{{ANALYSIS_AGENT_NAME}}}
              - {{{IMPLEMENTATION_AGENT_NAME}}}
              
-             Always follow these rules when selecting the next participant:
-             - After the user input, the {{{ANALYSIS_AGENT_NAME}}} must analyze and provide a detailed change plan.
-             - If the analysis agent's last message contains "Change plan not ready", "Continuing analysis", "Analysis in progress", or does not contain "Change plan complete", it remains the analysis agent's turn.
-             - Once the change plan is provided and the phrase "Change plan complete" (or similar, e.g. "Plan complete", "Analysis finished") appears, the {{{IMPLEMENTATION_AGENT_NAME}}} implements the changes.
-             - If {{{IMPLEMENTATION_AGENT_NAME}}} has questions about the change plan, {{{ANALYSIS_AGENT_NAME}}} answers.
-             - After the {{{ANALYSIS_AGENT_NAME}}} has answered a question from the {{{IMPLEMENTATION_AGENT_NAME}}}, it is the {{{IMPLEMENTATION_AGENT_NAME}}}'s turn again.
+             **Output ONLY the agent name, and nothing else**.
+             For example: {{{ANALYSIS_AGENT_NAME}}}
+             
+             **Always follow these rules when selecting the next participant**:
+             - After user input, always {{{ANALYSIS_AGENT_NAME}}}.
+             - If the last message from {{{ANALYSIS_AGENT_NAME}}} ends with "Change plan complete.", switch to {{{IMPLEMENTATION_AGENT_NAME}}}.
+             - If the last message from {{{IMPLEMENTATION_AGENT_NAME}}} ends with "Implementation not complete. Continuing work.", keep {{{IMPLEMENTATION_AGENT_NAME}}}.
+             - If the last message from {{{IMPLEMENTATION_AGENT_NAME}}} ends with "Implementation complete.", no further agent should take a turn.
+             - If {{{IMPLEMENTATION_AGENT_NAME}}} asks a question, {{{ANALYSIS_AGENT_NAME}}} answers, then switch back to {{{IMPLEMENTATION_AGENT_NAME}}}.
              - If you cannot determine the next agent, default to {{{ANALYSIS_AGENT_NAME}}}.
              
-             History:
+             **History**:
              {{$history}}
              """);
 
@@ -335,7 +337,7 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         ## Objective
         
-        Before making any changes, you must always create a new branch using the pattern feature/<short-description>. This is required for every implementation task.
+        **Before making any changes, you must always create a new branch using the pattern feature/<short-description>. This is required for every implementation task.**
         Analyze the planned changes provided in the chat and implement them in the repository within the development container.
         Use Bash commands via the dev container tools to modify files, commit changes, and manage the repository.
         **Make small, focused commits for each logical change. Do not group unrelated changes into a single commit. Each commit message should clearly describe the change.**
@@ -349,6 +351,7 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         ## Constraints
         
         - **Only workspace folder allowed**: All changes must be restricted to the `/workspace` folder and subfolders.
+        - **Only working branches allowed**: Always create a new branch for each implementation task using the pattern `feature/<short-description>`. This is required for every implementation task.
         - **Only implement changes**: Do not perform any analysis or planning. Your task is to implement the planned changes in the repository.
         - **Own code only**: Only consider code that is part of the repository itself. Do **not** modify third-party dependencies, generated code, or external libraries unless explicitly included in the planned changes.
         - **No assumptions**: Do not make assumptions about the code structure or naming conventions. Follow the provided change plan and repository structure.
@@ -373,15 +376,25 @@ public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingA
         
         ## Output Format
         
-        Your implementation steps must include:
-        1. Branch Creation
-           - Show the created branch name (e.g., feature/short-description).
-        2. Commits
-           - Show the commit messages.
-        3. Build and Test Results
-           - Show build and test results.
-        4. Completion Phrase
-           - End with "Implementation complete." or "Implementation not complete. Continuing work."
+        Format your response as a numbered Markdown list.  
+        Do not include any Bash commands.  
+        Only show the results and outcomes of each step.
+        
+        Example:
+        
+        1. **Branch Creation**
+           - Branch name: feature/short-description
+        
+        2. **Commits**
+           - Commit 1: "Refactor Send method in ChatPage.razor"
+           - Commit 2: "Update references to Send method"
+        
+        3. **Build and Test Results**
+           - Build: Success
+           - Test: All tests passed
+        
+        4. **Completion Phrase**
+           - "Implementation complete."
         
         **IMPORTANT**:
         At the end of your response, you MUST add one of the following phrases:
