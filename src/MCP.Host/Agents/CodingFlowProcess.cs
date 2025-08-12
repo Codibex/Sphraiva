@@ -1,0 +1,621 @@
+﻿using MCP.Host.Agents.Steps;
+using MCP.Host.Hubs;
+using MCP.Host.Services;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Agents;
+using Microsoft.SemanticKernel.Agents.Chat;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.Ollama;
+using System.ComponentModel;
+
+namespace MCP.Host.Agents;
+
+public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingAgentHub, ICodingAgentHub> hubContext)
+{
+    public async Task RunAsync(FlowParameter parameter)
+    {
+        // Plugin parameter can be false and added for specific agents
+        var kernel = kernelFactory.Create(true);
+        
+        const string MANAGER_AGENT_NAME = "MANAGER_AGENT";
+        var managerAgent = CreateAgent(MANAGER_AGENT_NAME, MANAGER_AGENT_INSTRUCTIONS, kernel.Clone());
+
+        const string ANALYSIS_AGENT_NAME = "ANALYSIS_AGENT";
+        var analysisAgent = CreateAgent(ANALYSIS_AGENT_NAME, ANALYSIS_AGENT_INSTRUCTIONS, kernel.Clone());
+
+        const string IMPLEMENTATION_AGENT_NAME = "IMPLEMENTATION_AGENT";
+        var implementationAgent = CreateAgent(IMPLEMENTATION_AGENT_NAME, IMPLEMENTATION_AGENT_INSTRUCTIONS, kernel.Clone());
+
+        var selectionFunction = AgentGroupChat.CreatePromptFunctionForStrategy(
+            $$$"""
+             Determine which participant takes the next turn in a conversation based on the the most recent participant.
+             State only the name of the participant to take the next turn.
+             
+             **Choose only from these participants**:
+             - {{{ANALYSIS_AGENT_NAME}}}
+             - {{{IMPLEMENTATION_AGENT_NAME}}}
+             
+             **Output ONLY the agent name, and nothing else**.
+             For example: {{{ANALYSIS_AGENT_NAME}}}
+             
+             **Always follow these rules when selecting the next participant**:
+             - After user input, always {{{ANALYSIS_AGENT_NAME}}}.
+             - If the last message from {{{ANALYSIS_AGENT_NAME}}} ends with "Change plan complete.", switch to {{{IMPLEMENTATION_AGENT_NAME}}}.
+             - If the last message from {{{IMPLEMENTATION_AGENT_NAME}}} ends with "Implementation not complete. Continuing work.", keep {{{IMPLEMENTATION_AGENT_NAME}}}.
+             - If the last message from {{{IMPLEMENTATION_AGENT_NAME}}} ends with "Implementation complete.", no further agent should take a turn.
+             - If {{{IMPLEMENTATION_AGENT_NAME}}} asks a question, {{{ANALYSIS_AGENT_NAME}}} answers, then switch back to {{{IMPLEMENTATION_AGENT_NAME}}}.
+             - If you cannot determine the next agent, default to {{{ANALYSIS_AGENT_NAME}}}.
+             
+             **History**:
+             {{$history}}
+             """);
+
+        var terminationFunction = AgentGroupChat.CreatePromptFunctionForStrategy(
+            $$$"""
+            Evaluate if the {{{IMPLEMENTATION_AGENT_NAME}}} has confirmed that all required changes have been successfully completed.
+            Look for a final confirmation from the {{{IMPLEMENTATION_AGENT_NAME}}}, such as "implementation complete", "all changes applied", or a similar statement in the conversation history.
+            If such a confirmation is present, respond with the phrase: completed flow
+
+            History:
+            {{$history}}
+            """);
+
+        var chat = new AgentGroupChat(analysisAgent, implementationAgent)
+        {
+            ExecutionSettings = new AgentGroupChatSettings
+            {
+                SelectionStrategy = new KernelFunctionSelectionStrategy(selectionFunction, kernel)
+                {
+                    HistoryVariableName = "history",
+                    ResultParser = (r) => r.GetValue<string>() ?? ANALYSIS_AGENT_NAME,
+                    InitialAgent = analysisAgent
+                },
+                TerminationStrategy = new KernelFunctionTerminationStrategy(terminationFunction, kernel)
+                {
+                    HistoryVariableName = "history",
+                    ResultParser = (r) =>
+                        r.GetValue<string>()?.Contains("completed flow", StringComparison.InvariantCultureIgnoreCase) ??
+                        false,
+                    MaximumIterations = 1000
+                }
+            }
+        };
+
+        var kernel2 = kernelFactory.CreateAgentGroupChatKernel(managerAgent, chat);
+        
+        KernelProcess process = SetupProcess(parameter.ChatId);
+        IExternalKernelProcessMessageChannel processMessageChannel = new CodingAgentProcessMessageChannel(parameter.ConnectionId, hubContext);
+
+        
+        await process.StartAsync(kernel2,
+            new KernelProcessEvent
+            {
+                Id = GatherRequirementStep.START_REQUIREMENT_IMPLEMENTATION,
+                Data = parameter.Requirement
+            },
+            processMessageChannel);
+    }
+
+    private KernelProcess SetupProcess(Guid chatId)
+    {
+        ProcessBuilder processBuilder = new($"CodingAgent-{chatId}");
+
+        var gatherRequirementStep = processBuilder.AddStepFromType<GatherRequirementStep>();
+        var inputCheckStep = processBuilder.AddStepFromType<InputCheckStep>();
+        var setupInfrastructureStep = processBuilder.AddStepFromType<SetupInfrastructureStep>();
+
+        var managerAgentStep = processBuilder.AddStepFromType<ManagerAgentStep>();
+        var agentGroupStep = processBuilder.AddStepFromType<AgentGroupChatStep>();
+
+        var proxyStep = processBuilder.AddProxyStep("workflowProxy", [CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE, "RequestUserReview", "PublishDocumentation"]);
+
+        processBuilder
+            .OnInputEvent(GatherRequirementStep.START_REQUIREMENT_IMPLEMENTATION)
+            .SendEventTo(new(gatherRequirementStep));
+
+        // Hooking up the process steps
+        gatherRequirementStep
+            .OnFunctionResult()
+            .SendEventTo(new ProcessFunctionTargetBuilder(inputCheckStep, functionName: InputCheckStep.ProcessFunctions.CHECK_INPUT));
+
+        inputCheckStep
+            .OnEvent(InputCheckStep.OutputEvents.INPUT_VALIDATION_FAILED)
+            .EmitExternalEvent(proxyStep, CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE);
+
+        inputCheckStep
+            .OnEvent(InputCheckStep.OutputEvents.INPUT_VALIDATION_SUCCEEDED)
+            .SendEventTo(new ProcessFunctionTargetBuilder(setupInfrastructureStep));
+
+        setupInfrastructureStep
+            .OnEvent(SetupInfrastructureStep.OutputEvents.SETUP_INFRASTRUCTURE_SUCCEEDED)
+            .SendEventTo(new ProcessFunctionTargetBuilder(managerAgentStep,
+                ManagerAgentStep.ProcessStepFunctions.InvokeAgent));
+
+        // Delegate to inner agents
+        managerAgentStep
+            .OnEvent(AgentOrchestrationEvents.AgentWorking)
+            .SendEventTo(new ProcessFunctionTargetBuilder(managerAgentStep, ManagerAgentStep.ProcessStepFunctions.InvokeGroup));
+
+        // Provide input to inner agents
+        managerAgentStep
+            .OnEvent(AgentOrchestrationEvents.GroupInput)
+            .SendEventTo(new ProcessFunctionTargetBuilder(agentGroupStep, parameterName: "input"));
+
+        // Provide inner response to primary agent
+        agentGroupStep
+            .OnEvent(AgentOrchestrationEvents.GroupCompleted)
+            .SendEventTo(new ProcessFunctionTargetBuilder(managerAgentStep, ManagerAgentStep.ProcessStepFunctions.ReceiveResponse, parameterName: "response"));
+
+        return processBuilder.Build();
+    }
+
+    private static ChatCompletionAgent CreateAgent(string agentName, string instructions, Kernel kernel) =>
+        new()
+        {
+            Name = agentName,
+            Instructions = instructions,
+            Kernel = kernel,
+            Arguments = new KernelArguments(
+                new OllamaPromptExecutionSettings
+                {
+                    FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
+                    Temperature = 0
+                })
+        };
+
+    private const string MANAGER_AGENT_INSTRUCTIONS =
+        """
+        ## Role
+        
+        You are the manager agent responsible for orchestrating the coding process.
+        
+        ---
+        
+        ## Environment
+        
+        It is not possible to ask the user anything.
+        
+        ---
+        
+        ## Objective
+        
+        - Coordinate the flow between analysis and implementation agents.
+        - Pass requirements and results between agents.
+        - Monitor progress and ensure all steps are completed.
+        - Do not ask the user for confirmation or input.
+        - Do not provide direct answers to the user's requirement.
+        - Do not suggest additional details.
+        - Only orchestrate the process and communicate between agents.
+        
+        ---
+        
+        ### Constraints
+        
+        - Capture information provided by the user for their scheduling request.
+        - Request confirmation without suggesting additional details.
+        - Never provide a direct answer to the user's request.
+        
+        ---
+        
+        """;
+
+    private const string ANALYSIS_AGENT_INSTRUCTIONS =
+        """
+        ## Role
+        
+        You are a senior software engineering agent.
+        You are skilled at analyzing user requirements and planning detailed code changes in a repository to fulfill those requirements.
+        You use the provided tools, including Bash commands inside the development container, for repository analysis and planning.
+        Your capabilities include:
+        - Analyzing user requirements
+        - Inspecting repository contents with Bash commands and tools
+        - Planning code changes based on the analysis
+        - Ensuring code quality and maintainability
+        - Proposing refactorings if necessary
+        - Creating a detailed change plan for implementation
+        - Focusing on the repository code only, without external dependencies or assumptions
+        
+        ---
+        
+        ## Environment
+        
+        A Docker development container with a freshly cloned repository is already available. The container name is available in the chat.
+        The repository resides inside a subfolder of the `/workspace` directory. The repository name is also available in the chat.
+        
+        You can access the development container using the provided dev container tool.
+        Bash commands can be executed in the development container with the dev container tools (e.g., run command in dev container) to inspect the repository and gather information.
+        
+        It is not possible to ask the user anything.
+        
+        ---
+        
+        ## Objective
+        
+        Analyze the user requirement and compare it with the current state of the repository in the development container.
+        Include all files in your analysis, regardless of their type or extension.
+        Use Bash commands via the dev container tools to examine the repository contents.
+        Your goal is to produce a concrete change plan that can be passed to a coding agent for implementation.
+        
+        Plan a refactoring if needed, to ensure the code remains clean, consistent, and maintainable.
+        
+        Note: All required inputs, such as the container name, repository name, and user requirement, are provided in the chat context.
+        
+        ---
+        
+        ## Constraints
+        
+        - **Only workspace folder allowed**: All analysis must be restricted to the `/workspace` folder and subfolders.
+        - **Only analyze**: Do not perform any actual changes to the repository. Your task is to analyze and **plan**, not to modify code.
+        - **Analyze all files**: Include all files in your analysis, regardless of their type or extension. This includes .razor, .cs, .html, cshtml, yml, and any other file types present in the repository.
+        - **Own code only**: Only consider code that is part of the repository itself. Do **not** propose changes to third-party dependencies, generated code, or external libraries.
+        - **No assumptions**: Do not make assumptions about the code structure or naming conventions. Analyze the actual content of the files.
+        - **No external references**: Do not reference external documentation or resources. Your analysis must be self-contained within the repository.
+        - **No discussions**: Focus solely on the analysis and planning. Do not engage in discussions or ask for clarifications unless absolutely necessary.
+        - **Execute analysis**: Use the provided tools to execute commands and analyze the repository. Do not simulate or suggest commands; execute them directly.
+        
+        ---
+        
+        ## Response Frequency
+        
+        You must always send a response, even if you are waiting for a command result, need more time, or have encountered an error. Never stop responding until you have completed the change plan. Always end your message with:
+        - "Change plan not ready. Continuing analysis."
+        or
+        - "Change plan complete."
+        
+        ---
+        
+        ## Output Format: Detailed Change Plan (Markdown)
+        
+        Your plan must include:
+        
+        1. Files to Modify
+           List each file and the reason it needs to be changed.
+        2. Specific Changes
+           For each file: explain what exactly needs to be changed and why.
+           Prefer code blocks showing before and after versions where possible.
+        3. New Files (if any)
+           - Describe each new file, its purpose, and initial contents.
+        4. Special Notes
+           - Mention any refactorings, compatibility concerns, external dependencies, or follow-up steps.
+        
+        **IMPORTANT**:
+        At the end of your response, you MUST add one of the following phrases:
+        - "Change plan not ready. Continuing analysis."
+        - "Change plan complete."
+        
+        Never respond without one of these phrases at the end of your message.
+        
+        ---
+        
+        ## Tool Usage
+        
+        - Use Bash commands via the dev container tools to analyze the repository and inspect the code.
+        
+        **Samples**:
+        - To analyze a file, you might use: `cat /workspace/repository/path/to/file.cs`
+        - To find all files with a content: `grep -r "search_term" /workspace/repository/`
+        
+        ---
+        
+        **REMINDER**:
+        Never respond without one of the required phrases at the end of your message.
+        
+        ---
+        
+        """;
+
+    private const string IMPLEMENTATION_AGENT_INSTRUCTIONS =
+        """
+        ## Role
+        
+        You are a senior software engineering agent.
+        You are skilled at implementing planned changes in a cloned repository within a development container. 
+        You use the provided tools, including Bash commands inside the development container, for code modifications and repository management.
+        Your capabilities include:
+        - Analyzing planned changes
+        - Implementing code changes based on a detailed change plan
+        - Ensuring code quality and maintainability
+        - Commit changes with a concise message summarizing the purpose
+        - Building the solution to verify changes
+        - Running tests to ensure correctness
+        - Pushing changes to the remote repository after successful implementation and testing
+        
+        ---
+        
+        ## Environment
+        
+        A Docker development container with a freshly cloned repository is already available. The container name is available in the chat.
+        The repository resides inside a subfolder of the `/workspace` directory. The repository name is also available in the chat.
+        
+        You can access the development container using the provided dev container tool.
+        Bash commands can be executed in the development container with the dev container tools (e.g., run command in dev container) to inspect the repository, gather information make changes and manage the repository.
+        
+        It is not possible to ask the user anything.
+        
+        ---
+        
+        ## Objective
+        
+        **Before making any changes, you must always create a new branch using the pattern feature/<short-description>. This is required for every implementation task.**
+        Analyze the planned changes provided in the chat and implement them in the repository within the development container.
+        Use Bash commands via the dev container tools to modify files, commit changes, and manage the repository.
+        **Make small, focused commits for each logical change. Do not group unrelated changes into a single commit. Each commit message should clearly describe the change.**
+        Ensure that all changes are made according to the provided change plan, maintaining code quality and consistency.
+        Build the solution and run the tests to ensure all changes are correct and do not break existing functionality.
+        
+        Note: All required inputs, such as the container name, repository name, and planned changes, are provided in the chat context.
+        
+        ---
+        
+        ## Constraints
+        
+        - **Only workspace folder allowed**: All changes must be restricted to the `/workspace` folder and subfolders.
+        - **Only working branches allowed**: Always create a new branch for each implementation task using the pattern `feature/<short-description>`. This is required for every implementation task.
+        - **Only implement changes**: Do not perform any analysis or planning. Your task is to implement the planned changes in the repository.
+        - **Own code only**: Only consider code that is part of the repository itself. Do **not** modify third-party dependencies, generated code, or external libraries unless explicitly included in the planned changes.
+        - **No assumptions**: Do not make assumptions about the code structure or naming conventions. Follow the provided change plan and repository structure.
+        - **No external references**: Do not reference external documentation or resources. Your implementation must be self-contained within the repository.
+        - **No discussions**: Focus solely on the implementation of the planned changes. Do not engage in discussions or ask for clarifications unless absolutely necessary.
+        - **Commit changes**: After implementing the changes, commit them with meaningful commit messages that reflect the changes made.
+        - **Build and test**: Build the solution to verify that the changes are correct. Fix the issue while staying within the scope of the planned changes.
+        - **Push changes**: After successful implementation and testing, push the changes to the remote repository.
+        
+        ---
+        
+        ## Response Frequency
+        
+        If your implementation will take a long time, provide regular, incremental responses.
+        - After each major step, code change, or test, send an update.
+        - Always end each response with either:
+          - "Implementation not complete. Continuing work."
+          - "Implementation complete."
+        This ensures the process remains active and prevents timeouts.
+        
+        ---
+        
+        ## Output Format
+        
+        Format your response as a numbered Markdown list.  
+        Do not include any Bash commands.  
+        Only show the results and outcomes of each step.
+        
+        Example:
+        
+        1. **Branch Creation**
+           - Branch name: feature/short-description
+        
+        2. **Commits**
+           - Commit 1: "Refactor Send method in ChatPage.razor"
+           - Commit 2: "Update references to Send method"
+        
+        3. **Build and Test Results**
+           - Build: Success
+           - Test: All tests passed
+        
+        4. **Completion Phrase**
+           - "Implementation complete."
+        
+        **IMPORTANT**:
+        At the end of your response, you MUST add one of the following phrases:
+        - "Implementation not complete. Continuing work."
+        - "Implementation complete."
+        
+        Never respond without one of these phrases at the end of your message.
+           
+        ---
+        
+        ## Tool Usage
+        
+        - Use the dev container tools to run Bash commands for modifying files, committing changes, and managing the repository.
+        
+        ---
+        
+        **REMINDER**:
+        Never start implementation without first creating a new branch.
+        
+        ---
+        
+        """;
+}
+
+/// <summary>
+/// Primary agent. This agent is responsible for managing the flow of the coding process.
+/// </summary>
+public class ManagerAgentStep : KernelProcessStep
+{
+    public const string AgentServiceKey = $"{nameof(ManagerAgentStep)}:{nameof(AgentServiceKey)}";
+    public const string ReducerServiceKey = $"{nameof(ManagerAgentStep)}:{nameof(ReducerServiceKey)}";
+
+    public static class ProcessStepFunctions
+    {
+        public const string InvokeAgent = nameof(InvokeAgent);
+        public const string InvokeGroup = nameof(InvokeGroup);
+        public const string ReceiveResponse = nameof(ReceiveResponse);
+    }
+
+    [KernelFunction(ProcessStepFunctions.InvokeAgent)]
+    public async Task InvokeAgentAsync(KernelProcessStepContext context, Kernel kernel, string userInput, ILogger logger)
+    {
+        // Get the chat history
+        IChatHistoryProvider historyProvider = GetHistory(kernel);
+        ChatHistory history = historyProvider.Get();
+        ChatHistoryAgentThread agentThread = new(history);
+
+        // Obtain the agent response
+        //ChatCompletionAgent agent = GetAgent<ChatCompletionAgent>(kernel, AgentServiceKey);
+        //await foreach (ChatMessageContent message in agent.InvokeAsync(new ChatMessageContent(AuthorRole.User, userInput), agentThread))
+        //{
+        //    // Both the input message and response message will automatically be added to the thread, which will update the internal chat history.
+
+        //    // Emit event for each agent response
+        //    await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.AgentResponse, Data = message });
+        //}
+
+        history.AddUserMessage(userInput);
+
+        // Evaluate current intent
+        IntentResult intent = await IsRequestingUserInputAsync(kernel, history, logger);
+
+        string intentEventId =
+            intent.IsRequestingUserInput ?
+                AgentOrchestrationEvents.AgentResponded :
+                intent.IsWorking ?
+                    AgentOrchestrationEvents.AgentWorking :
+                    CommonEvents.UserInputComplete;
+
+        await context.EmitEventAsync(new() { Id = intentEventId });
+    }
+
+    [KernelFunction(ProcessStepFunctions.InvokeGroup)]
+    public async Task InvokeGroupAsync(KernelProcessStepContext context, Kernel kernel)
+    {
+        // Get the chat history
+        IChatHistoryProvider historyProvider = GetHistory(kernel);
+        ChatHistory history = historyProvider.Get();
+
+        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupInput, Data = history.First() });
+    }
+
+    [KernelFunction(ProcessStepFunctions.ReceiveResponse)]
+    public async Task ReceiveResponseAsync(KernelProcessStepContext context, Kernel kernel, string response)
+    {
+        // Get the chat history
+        IChatHistoryProvider historyProvider = GetHistory(kernel);
+        ChatHistory history = historyProvider.Get();
+
+        // Proxy the inner response
+        ChatCompletionAgent agent = GetAgent<ChatCompletionAgent>(kernel, AgentServiceKey);
+        ChatMessageContent message = new(AuthorRole.Assistant, response) { AuthorName = agent.Name };
+        history.Add(message);
+
+        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.AgentResponse, Data = message });
+
+        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.AgentResponded });
+    }
+
+    private static async Task<IntentResult> IsRequestingUserInputAsync(Kernel kernel, ChatHistory history, ILogger logger)
+    {
+        await Task.CompletedTask;
+        return new IntentResult(false, true, string.Empty);
+        //ChatHistory localHistory =
+        //[
+        //    new ChatMessageContent(AuthorRole.System, "Analyze the conversation and determine if user input is being solicited. Please respond with a JSON object containing only the following fields: IsRequestingUserInput, IsWorking and Rationale. Fill out the properties in all situations."),
+        //    .. history.TakeLast(1)
+        //];
+
+        //IChatCompletionService service = kernel.GetRequiredService<IChatCompletionService>();
+
+        //ChatMessageContent response = await service.GetChatMessageContentAsync(localHistory);
+        //var rawText = response.ToString();
+        //if (string.IsNullOrWhiteSpace(rawText))
+        //{
+        //    logger.LogError("Response is not valid");
+        //    return new IntentResult(false, true, string.Empty);
+        //}
+
+        //try
+        //{
+        //    IntentResult intent = JsonSerializer.Deserialize<IntentResult>(response.ToString())!;
+        //    logger.LogTrace("{StepName} Response Intent - {IsRequestingUserInput}: {Rationale}", nameof(ManagerAgentStep), intent.IsRequestingUserInput, intent.Rationale);
+        //    return intent;
+
+        //}
+        //catch
+        //{
+        //    logger.LogError("Response is not valid: {rawText}", rawText);
+        //    return new IntentResult(false, true, string.Empty);
+        //}
+    }
+
+    [DisplayName("IntentResult")]
+    [Description("this is the result description")]
+    public sealed record IntentResult(
+        [property:Description("True if user input is requested or solicited.  Addressing the user with no specific request is False.  Asking a question to the user is True.")]
+        bool IsRequestingUserInput,
+        [property:Description("True if the user request is being worked on.")]
+        bool IsWorking,
+        [property:Description("Rationale for the value assigned to IsRequestingUserInput")]
+        string Rationale);
+
+    private static IChatHistoryProvider GetHistory(Kernel kernel) =>
+        kernel.Services.GetRequiredService<IChatHistoryProvider>();
+
+    private static TAgent GetAgent<TAgent>(Kernel kernel, string key) where TAgent : Agent =>
+        kernel.Services.GetRequiredKeyedService<TAgent>(key);
+
+    private static async Task<string> SummarizeHistoryAsync(Kernel kernel, string key, IReadOnlyList<ChatMessageContent> history)
+    {
+        ChatHistorySummarizationReducer reducer = kernel.Services.GetRequiredKeyedService<ChatHistorySummarizationReducer>(key);
+        IEnumerable<ChatMessageContent>? reducedResponse = await reducer.ReduceAsync(history);
+        ChatMessageContent summary = reducedResponse?.First() ?? throw new InvalidDataException("No summary available");
+        return summary.ToString();
+    }
+}
+
+public class AgentGroupChatStep : KernelProcessStep
+{
+    public const string ChatServiceKey = $"{nameof(AgentGroupChatStep)}:{nameof(ChatServiceKey)}";
+    public const string ReducerServiceKey = $"{nameof(AgentGroupChatStep)}:{nameof(ReducerServiceKey)}";
+
+    public static class ProcessStepFunctions
+    {
+        public const string InvokeAgentGroup = nameof(InvokeAgentGroup);
+    }
+
+    [KernelFunction(ProcessStepFunctions.InvokeAgentGroup)]
+    public async Task InvokeAgentGroupAsync(KernelProcessStepContext context, Kernel kernel, string input)
+    {
+        AgentGroupChat chat = kernel.GetRequiredService<AgentGroupChat>();
+
+        // Reset chat state from previous invocation
+        //await chat.ResetAsync();
+        chat.IsComplete = false;
+
+        ChatMessageContent message = new(AuthorRole.User, input);
+        chat.AddChatMessage(message);
+        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupMessage, Data = message });
+
+        await foreach (ChatMessageContent response in chat.InvokeAsync())
+        {
+           await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupMessage, Data = response });
+        }
+
+        ChatMessageContent[] history = await chat.GetChatMessagesAsync().Reverse().ToArrayAsync();
+
+        // Summarize the group chat as a response to the primary agent
+        string summary = await SummarizeHistoryAsync(kernel, ReducerServiceKey, history);
+
+        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupCompleted, Data = summary });
+    }
+
+    private static async Task<string> SummarizeHistoryAsync(Kernel kernel, string key, IReadOnlyList<ChatMessageContent> history)
+    {
+        ChatHistorySummarizationReducer reducer = kernel.Services.GetRequiredKeyedService<ChatHistorySummarizationReducer>(key);
+        IEnumerable<ChatMessageContent>? reducedResponse = await reducer.ReduceAsync(history);
+        ChatMessageContent summary = reducedResponse?.First() ?? throw new InvalidDataException("No summary available");
+        return summary.ToString();
+    }
+}
+
+public static class AgentOrchestrationEvents
+{
+    public static readonly string StartProcess = nameof(StartProcess);
+
+    public static readonly string AgentResponse = nameof(AgentResponse);
+    public static readonly string AgentResponded = nameof(AgentResponded);
+    public static readonly string AgentWorking = nameof(AgentWorking);
+    public static readonly string GroupInput = nameof(GroupInput);
+    public static readonly string GroupMessage = nameof(GroupMessage);
+    public static readonly string GroupCompleted = nameof(GroupCompleted);
+}
+
+public static class CommonEvents
+{
+    public static readonly string UserInputReceived = nameof(UserInputReceived);
+    public static readonly string UserInputComplete = nameof(UserInputComplete);
+    public static readonly string AssistantResponseGenerated = nameof(AssistantResponseGenerated);
+    public static readonly string Exit = nameof(Exit);
+}
+
+public record FlowParameter(Guid ChatId, string ConnectionId, string Requirement);

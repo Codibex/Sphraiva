@@ -9,7 +9,8 @@ public class DevContainerService(
     IOptions<DevContainerSettings> options,
     DockerClient dockerClient,
     IDevContainerBuilder devContainerBuilder,
-    IDevContainerCreator devContainerCreator) : IDevContainerService
+    IDevContainerCreator devContainerCreator,
+    ILogger<DevContainerService> logger) : IDevContainerService
 {
     private readonly DevContainerSettings _settings = options.Value;
 
@@ -60,6 +61,8 @@ public class DevContainerService(
 
     public async Task<string> RunCommandInContainerAsync(string containerName, string command, CancellationToken cancellationToken)
     {
+        logger.LogInformation("Execution of the command '{command}' started...", command);
+
         var container = await FindContainer(containerName);
         if (container == null)
         {
@@ -80,7 +83,9 @@ public class DevContainerService(
 
         var output = await stream.ReadOutputToEndAsync(cancellationToken);
 
-        return output.stdout!;
+        logger.LogInformation("Execution of the command ended with the result (stdout: '{stdout}', stderr: '{stderr}'", output.stdout, output.stderr);
+
+        return $"{output.stdout ?? string.Empty}{Environment.NewLine}{output.stderr ?? string.Empty}";
     }
 
     private async Task<ContainerListResponse?> FindContainer(string containerName)

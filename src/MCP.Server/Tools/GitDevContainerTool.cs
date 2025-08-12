@@ -14,8 +14,8 @@ namespace MCP.Server.Tools;
 public class GitDevContainerTool(IGitDevContainerService gitDevContainerService)
 {
     [McpServerTool(Title = "Clone a Github repository into a Docker development container.", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
-    public async Task<string> CloneRepositoryInDevContainerAsync(string containerName, string repository, CancellationToken cancellationToken)
-        => await gitDevContainerService.CloneRepositoryInDevContainerAsync(containerName, repository, cancellationToken);
+    public async Task<string> CloneRepositoryInDevContainerAsync(string containerName, string repositoryName, CancellationToken cancellationToken)
+        => await gitDevContainerService.CloneRepositoryInDevContainerAsync(containerName, repositoryName, cancellationToken);
 
     [McpServerTool(Title = "Checkout a branch based on the main branch in a Git repository inside a Docker development container.", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
     public async Task<string> CheckoutBranchInDevContainerAsync(string containerName, string repository, string branchName, CancellationToken cancellationToken)

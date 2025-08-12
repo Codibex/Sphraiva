@@ -17,24 +17,13 @@ public static class ServiceCollectionExtensions
             new OllamaApiClient(new HttpClient
             {
                 BaseAddress = new Uri(configuration["OLLAMA_SERVER"] ?? throw new InvalidOperationException("Configuration key 'OLLAMA_SERVER' is missing or null.")),
-                Timeout = TimeSpan.FromMinutes(5)
+                Timeout = TimeSpan.FromMinutes(20)
             }, string.IsNullOrWhiteSpace(configuration["LLM_MODEL"]) 
                 ? throw new ArgumentException("The configuration value for 'LLM_MODEL' is missing or empty.") 
                 : configuration["LLM_MODEL"]!)
         );
 
-        services.AddTransient(sp =>
-        {
-            var ollamaClient = sp.GetRequiredService<OllamaApiClient>();
-            var kernelBuilder = Kernel.CreateBuilder();
-            kernelBuilder
-                .AddOllamaChatClient(ollamaClient)
-                .AddOllamaChatCompletion(ollamaClient)
-                .AddOllamaTextGeneration(ollamaClient)
-                .AddOllamaEmbeddingGenerator(ollamaClient);
-            return kernelBuilder.Build();
-        });
-        services.AddTransient<IKernelProvider, KernelProvider>();
+        services.AddTransient<IKernelFactory, KernelFactory>();
 
         return services;
     }

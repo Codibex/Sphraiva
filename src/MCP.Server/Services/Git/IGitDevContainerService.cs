@@ -4,7 +4,7 @@ public interface IGitDevContainerService
 {
     Task<string> CloneRepositoryInDevContainerAsync(
         string containerName, 
-        string repository, 
+        string repositoryName, 
         CancellationToken cancellationToken);
 
     Task<string> CheckoutBranchInDevContainerAsync(
