@@ -53,13 +53,17 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
 
         var terminationFunction = AgentGroupChat.CreatePromptFunctionForStrategy(
             $$$"""
-            Evaluate if the {{{IMPLEMENTATION_AGENT_NAME}}} has confirmed that all required changes have been successfully completed.
-            Look for a final confirmation from the {{{IMPLEMENTATION_AGENT_NAME}}}, such as "implementation complete", "all changes applied", or a similar statement in the conversation history.
-            If such a confirmation is present, respond with the phrase: completed flow
+               Evaluate if the {{{IMPLEMENTATION_AGENT_NAME}}} has confirmed that all required changes have been successfully completed,
+               and there are no unresolved supervisor interventions (such as "SUPERVISOR_NUDGE", "timeout", or "error") in the conversation history.
+               Only respond with "completed flow" if BOTH of the following are true:
+               1. There is a final confirmation from the {{{IMPLEMENTATION_AGENT_NAME}}} (such as "implementation complete", "all changes applied", or a similar statement) in the conversation history.
+               2. There are no unresolved supervisor interventions in the conversation history.
 
-            History:
-            {{$history}}
-            """);
+               If both conditions are met, do respond only with "workflow completed".
+
+               History:
+               {{$history}}
+               """);
 
         var chat = new AgentGroupChat(analysisAgent, implementationAgent)
         {
@@ -68,15 +72,25 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
                 SelectionStrategy = new KernelFunctionSelectionStrategy(selectionFunction, kernel)
                 {
                     HistoryVariableName = "history",
-                    ResultParser = (r) => r.GetValue<string>() ?? ANALYSIS_AGENT_NAME,
+                    ResultParser = (r) =>
+                    {
+                        var agent = r.GetValue<string>() ?? ANALYSIS_AGENT_NAME;
+                        return agent;
+                    },
                     InitialAgent = analysisAgent
                 },
                 TerminationStrategy = new KernelFunctionTerminationStrategy(terminationFunction, kernel)
                 {
                     HistoryVariableName = "history",
                     ResultParser = (r) =>
-                        r.GetValue<string>()?.Contains("completed flow", StringComparison.InvariantCultureIgnoreCase) ??
-                        false,
+                    {
+                        var result = r.GetValue<string>()
+                                         ?.Trim()
+                                         .Equals("workflow completed", StringComparison.InvariantCultureIgnoreCase) ??
+                                     false;
+
+                        return result;
+                    },
                     MaximumIterations = 1000
                 }
             },
@@ -87,7 +101,6 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         
         var process = SetupProcess(parameter.ChatId);
         IExternalKernelProcessMessageChannel processMessageChannel = new CodingAgentProcessMessageChannel(parameter.ConnectionId, hubContext);
-
         
         await process.StartAsync(kernel2,
             new KernelProcessEvent
