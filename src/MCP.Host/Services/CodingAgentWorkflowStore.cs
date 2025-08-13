@@ -1,4 +1,4 @@
-using MCP.Host.Agents;
+using MCP.Host.Agents.CodingAgent;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 

@@ -1,19 +1,19 @@
-﻿using MCP.Host.Agents.Steps;
+﻿using MCP.Host.Agents.CodingAgent.Events;
+using MCP.Host.Agents.CodingAgent.Steps;
+using MCP.Host.Agents.Steps;
 using MCP.Host.Hubs;
 using MCP.Host.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.Chat;
-using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Ollama;
-using System.ComponentModel;
 
-namespace MCP.Host.Agents;
+namespace MCP.Host.Agents.CodingAgent;
 
 public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<CodingAgentHub, ICodingAgentHub> hubContext, ILoggerFactory loggerFactory)
 {
-    public async Task RunAsync(FlowParameter parameter)
+    public async Task RunAsync(WorkflowParameter parameter)
     {
         // Plugin parameter can be false and added for specific agents
         var kernel = kernelFactory.Create(true);
@@ -85,7 +85,7 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
 
         var kernel2 = kernelFactory.CreateAgentGroupChatKernel(managerAgent, chat);
         
-        KernelProcess process = SetupProcess(parameter.ChatId);
+        var process = SetupProcess(parameter.ChatId);
         IExternalKernelProcessMessageChannel processMessageChannel = new CodingAgentProcessMessageChannel(parameter.ConnectionId, hubContext);
 
         
@@ -428,204 +428,3 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         
         """;
 }
-
-/// <summary>
-/// Primary agent. This agent is responsible for managing the flow of the coding process.
-/// </summary>
-public class ManagerAgentStep : KernelProcessStep
-{
-    public const string AgentServiceKey = $"{nameof(ManagerAgentStep)}:{nameof(AgentServiceKey)}";
-    public const string ReducerServiceKey = $"{nameof(ManagerAgentStep)}:{nameof(ReducerServiceKey)}";
-
-    public static class ProcessStepFunctions
-    {
-        public const string InvokeAgent = nameof(InvokeAgent);
-        public const string InvokeGroup = nameof(InvokeGroup);
-        public const string ReceiveResponse = nameof(ReceiveResponse);
-    }
-
-    [KernelFunction(ProcessStepFunctions.InvokeAgent)]
-    public async Task InvokeAgentAsync(KernelProcessStepContext context, Kernel kernel, string userInput, ILogger logger)
-    {
-        // Get the chat history
-        IChatHistoryProvider historyProvider = GetHistory(kernel);
-        ChatHistory history = historyProvider.Get();
-        ChatHistoryAgentThread agentThread = new(history);
-
-        // Obtain the agent response
-        //ChatCompletionAgent agent = GetAgent<ChatCompletionAgent>(kernel, AgentServiceKey);
-        //await foreach (ChatMessageContent message in agent.InvokeAsync(new ChatMessageContent(AuthorRole.User, userInput), agentThread))
-        //{
-        //    // Both the input message and response message will automatically be added to the thread, which will update the internal chat history.
-
-        //    // Emit event for each agent response
-        //    await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.AgentResponse, Data = message });
-        //}
-
-        history.AddUserMessage(userInput);
-
-        // Evaluate current intent
-        IntentResult intent = await IsRequestingUserInputAsync(kernel, history, logger);
-
-        string intentEventId =
-            intent.IsRequestingUserInput ?
-                AgentOrchestrationEvents.AgentResponded :
-                intent.IsWorking ?
-                    AgentOrchestrationEvents.AgentWorking :
-                    CommonEvents.UserInputComplete;
-
-        await context.EmitEventAsync(new() { Id = intentEventId });
-    }
-
-    [KernelFunction(ProcessStepFunctions.InvokeGroup)]
-    public async Task InvokeGroupAsync(KernelProcessStepContext context, Kernel kernel)
-    {
-        // Get the chat history
-        IChatHistoryProvider historyProvider = GetHistory(kernel);
-        ChatHistory history = historyProvider.Get();
-
-        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupInput, Data = history.First() });
-    }
-
-    [KernelFunction(ProcessStepFunctions.ReceiveResponse)]
-    public async Task ReceiveResponseAsync(KernelProcessStepContext context, Kernel kernel, string response)
-    {
-        // Get the chat history
-        IChatHistoryProvider historyProvider = GetHistory(kernel);
-        ChatHistory history = historyProvider.Get();
-
-        // Proxy the inner response
-        ChatCompletionAgent agent = GetAgent<ChatCompletionAgent>(kernel, AgentServiceKey);
-        ChatMessageContent message = new(AuthorRole.Assistant, response) { AuthorName = agent.Name };
-        history.Add(message);
-
-        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.AgentResponse, Data = message });
-
-        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.AgentResponded });
-    }
-
-    private static async Task<IntentResult> IsRequestingUserInputAsync(Kernel kernel, ChatHistory history, ILogger logger)
-    {
-        await Task.CompletedTask;
-        return new IntentResult(false, true, string.Empty);
-        //ChatHistory localHistory =
-        //[
-        //    new ChatMessageContent(AuthorRole.System, "Analyze the conversation and determine if user input is being solicited. Please respond with a JSON object containing only the following fields: IsRequestingUserInput, IsWorking and Rationale. Fill out the properties in all situations."),
-        //    .. history.TakeLast(1)
-        //];
-
-        //IChatCompletionService service = kernel.GetRequiredService<IChatCompletionService>();
-
-        //ChatMessageContent response = await service.GetChatMessageContentAsync(localHistory);
-        //var rawText = response.ToString();
-        //if (string.IsNullOrWhiteSpace(rawText))
-        //{
-        //    logger.LogError("Response is not valid");
-        //    return new IntentResult(false, true, string.Empty);
-        //}
-
-        //try
-        //{
-        //    IntentResult intent = JsonSerializer.Deserialize<IntentResult>(response.ToString())!;
-        //    logger.LogTrace("{StepName} Response Intent - {IsRequestingUserInput}: {Rationale}", nameof(ManagerAgentStep), intent.IsRequestingUserInput, intent.Rationale);
-        //    return intent;
-
-        //}
-        //catch
-        //{
-        //    logger.LogError("Response is not valid: {rawText}", rawText);
-        //    return new IntentResult(false, true, string.Empty);
-        //}
-    }
-
-    [DisplayName("IntentResult")]
-    [Description("this is the result description")]
-    public sealed record IntentResult(
-        [property:Description("True if user input is requested or solicited.  Addressing the user with no specific request is False.  Asking a question to the user is True.")]
-        bool IsRequestingUserInput,
-        [property:Description("True if the user request is being worked on.")]
-        bool IsWorking,
-        [property:Description("Rationale for the value assigned to IsRequestingUserInput")]
-        string Rationale);
-
-    private static IChatHistoryProvider GetHistory(Kernel kernel) =>
-        kernel.Services.GetRequiredService<IChatHistoryProvider>();
-
-    private static TAgent GetAgent<TAgent>(Kernel kernel, string key) where TAgent : Agent =>
-        kernel.Services.GetRequiredKeyedService<TAgent>(key);
-
-    private static async Task<string> SummarizeHistoryAsync(Kernel kernel, string key, IReadOnlyList<ChatMessageContent> history)
-    {
-        ChatHistorySummarizationReducer reducer = kernel.Services.GetRequiredKeyedService<ChatHistorySummarizationReducer>(key);
-        IEnumerable<ChatMessageContent>? reducedResponse = await reducer.ReduceAsync(history);
-        ChatMessageContent summary = reducedResponse?.First() ?? throw new InvalidDataException("No summary available");
-        return summary.ToString();
-    }
-}
-
-public class AgentGroupChatStep : KernelProcessStep
-{
-    public const string ChatServiceKey = $"{nameof(AgentGroupChatStep)}:{nameof(ChatServiceKey)}";
-    public const string ReducerServiceKey = $"{nameof(AgentGroupChatStep)}:{nameof(ReducerServiceKey)}";
-
-    public static class ProcessStepFunctions
-    {
-        public const string InvokeAgentGroup = nameof(InvokeAgentGroup);
-    }
-
-    [KernelFunction(ProcessStepFunctions.InvokeAgentGroup)]
-    public async Task InvokeAgentGroupAsync(KernelProcessStepContext context, Kernel kernel, string input)
-    {
-        AgentGroupChat chat = kernel.GetRequiredService<AgentGroupChat>();
-
-        // Reset chat state from previous invocation
-        //await chat.ResetAsync();
-        chat.IsComplete = false;
-
-        ChatMessageContent message = new(AuthorRole.User, input);
-        chat.AddChatMessage(message);
-        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupMessage, Data = message });
-
-        await foreach (ChatMessageContent response in chat.InvokeAsync())
-        {
-           await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupMessage, Data = response });
-        }
-
-        ChatMessageContent[] history = await chat.GetChatMessagesAsync().Reverse().ToArrayAsync();
-
-        // Summarize the group chat as a response to the primary agent
-        string summary = await SummarizeHistoryAsync(kernel, ReducerServiceKey, history);
-
-        await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupCompleted, Data = summary });
-    }
-
-    private static async Task<string> SummarizeHistoryAsync(Kernel kernel, string key, IReadOnlyList<ChatMessageContent> history)
-    {
-        ChatHistorySummarizationReducer reducer = kernel.Services.GetRequiredKeyedService<ChatHistorySummarizationReducer>(key);
-        IEnumerable<ChatMessageContent>? reducedResponse = await reducer.ReduceAsync(history);
-        ChatMessageContent summary = reducedResponse?.First() ?? throw new InvalidDataException("No summary available");
-        return summary.ToString();
-    }
-}
-
-public static class AgentOrchestrationEvents
-{
-    public static readonly string StartProcess = nameof(StartProcess);
-
-    public static readonly string AgentResponse = nameof(AgentResponse);
-    public static readonly string AgentResponded = nameof(AgentResponded);
-    public static readonly string AgentWorking = nameof(AgentWorking);
-    public static readonly string GroupInput = nameof(GroupInput);
-    public static readonly string GroupMessage = nameof(GroupMessage);
-    public static readonly string GroupCompleted = nameof(GroupCompleted);
-}
-
-public static class CommonEvents
-{
-    public static readonly string UserInputReceived = nameof(UserInputReceived);
-    public static readonly string UserInputComplete = nameof(UserInputComplete);
-    public static readonly string AssistantResponseGenerated = nameof(AssistantResponseGenerated);
-    public static readonly string Exit = nameof(Exit);
-}
-
-public record FlowParameter(Guid ChatId, string ConnectionId, string Requirement);

@@ -1,4 +1,5 @@
 using MCP.Host.Agents;
+using MCP.Host.Agents.CodingAgent;
 using MCP.Host.Api;
 using MCP.Host.Chat;
 using MCP.Host.Hubs;

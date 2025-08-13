@@ -1,4 +1,4 @@
-﻿using MCP.Host.Agents;
+﻿using MCP.Host.Agents.CodingAgent;
 
 namespace MCP.Host.Services;
 
@@ -16,7 +16,7 @@ public class CodingAgentBackgroundService(ICodingAgentChannel channel, IServiceP
                 processStore.AddFlow(implementationTask.ChatId, process);
                 try
                 {
-                    await process.RunAsync(new FlowParameter(implementationTask.ChatId, implementationTask.ConnectionId, implementationTask.Requirement));
+                    await process.RunAsync(new WorkflowParameter(implementationTask.ChatId, implementationTask.ConnectionId, implementationTask.Requirement));
                 }
                 catch (Exception e)
                 {

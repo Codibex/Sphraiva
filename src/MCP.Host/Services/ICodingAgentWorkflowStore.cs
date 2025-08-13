@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using MCP.Host.Agents;
+using MCP.Host.Agents.CodingAgent;
 
 namespace MCP.Host.Services;
 
