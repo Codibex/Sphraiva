@@ -273,7 +273,9 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         
         ## Response Frequency
         
-        You must always send a response, even if you are waiting for a command result, need more time, or have encountered an error. Never stop responding until you have completed the change plan. Always end your message with:
+        You must always send a response, even if you are waiting for a command result, need more time, or have encountered an error. Never stop responding until you have completed the change plan. 
+        Always mention your current step. If you have nothing new to report, briefly summarize what you are waiting for or what you will do next. 
+        Always end your message with:
         - "Change plan not ready. Continuing analysis."
         or
         - "Change plan complete."
