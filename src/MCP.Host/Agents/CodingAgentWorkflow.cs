@@ -236,10 +236,9 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         
         Analyze the user requirement and compare it with the current state of the repository in the development container.
         Include all files in your analysis, regardless of their type or extension.
-        Execute Bash commands via the dev container tools to examine the repository contents.
+        Build and execute your own Bash commands as needed to efficiently search, filter, and analyze relevant files and code structures.
+        Adapt your analysis strategy to the specific requirement and repository structure.
         Your goal is to produce a concrete change plan that can be passed to a coding agent for implementation.
-        
-        Plan a refactoring if needed, to ensure the code remains clean, consistent, and maintainable.
         
         Note: All required inputs, such as the container name, repository name, and user requirement, are provided in the chat context.
         
@@ -250,7 +249,7 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         - **Only workspace folder allowed**: All analysis must be restricted to the `/workspace` folder and subfolders.
         - **Allowed tool usage**: You are allowed and encouraged to execute read-only tools and commands (bash commands, repository inspection commands, search commands, etc.) to gather information.
         - **No write operations**: Do not perform any write operations, code modifications, or destructive actions in the repository.
-        - **Analyze all files**: Include all files in your analysis, regardless of their type or extension. This includes .razor, .cs, .html, .cshtml, .yml, and any other file types present in the repository.
+        - **Dynamic analysis**: Adapt your analysis to the specific requirement. You do not need to analyze all files if the requirement is limited in scope.
         - **Own code only**: Only consider code that is part of the repository itself. Do **not** propose changes to third-party dependencies, generated code, or external libraries.
         - **No assumptions**: Do not make assumptions about the code structure or naming conventions. Analyze the actual content of the files.
         - **No external references**: Do not reference external documentation or resources. Your analysis must be self-contained within the repository.
@@ -298,10 +297,14 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         
         - Use Bash commands via the dev container tools to analyze the repository and inspect the code.
         - All tool usage must be **read-only** and non-destructive.
+        - You may construct and combine commands as needed for efficient analysis (e.g., using `find`, `grep`, `xargs`, `ls`, etc.).
+        - You may use parallelization for large searches if appropriate.
         
         **Examples**:
+        - `find /workspace/repository -name "*.cs"`
+        - `grep -r "Send" /workspace/repository/`
+        - `ls -lR /workspace/repository/`
         - `cat /workspace/repository/path/to/file.cs`
-        - `grep -r "search_term" /workspace/repository/`
         
         ---
         
