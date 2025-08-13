@@ -29,10 +29,6 @@
             <MudButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="Abort" Disabled="!_isLoading" Class="mt-2 ml-2">
                 Abort
             </MudButton>
-            
-            <MudButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="Approve" Disabled="!_approvalRequired" Class="mt-2 ml-2">
-                Approve
-            </MudButton>
         </div>
         <MudAlert Severity="Severity.Info">The coding agent executes autonomous coding tasks and streams status updates.</MudAlert>
     </div>
@@ -45,7 +41,6 @@
     private bool _isLoading;
     private CancellationTokenSource? _cancellationTokenSource;
     private string _errorMessage = string.Empty;
-    private bool _approvalRequired;
 
     [Inject] public required IJSRuntime Js { get; set; }
     [Inject] public required IMcpService McpService { get; set; }
@@ -55,7 +50,7 @@
     [Parameter]
     public required CodingAgentViewModel ChatViewModel { get; set; }
 
-    private string Id => $"codeagent-{ChatViewModel.ChatId}";
+    private string Id => $"coding-agent-{ChatViewModel.ChatId}";
 
     protected override async Task OnInitializedAsync()
     {
@@ -69,17 +64,7 @@
 
         _hubConnection.On<string>("ReceiveUserReviewAsync", async (document) =>
         {
-            _approvalRequired = true;
             var agentMsg = ChatMessageViewModel.CreateAgentMessage(document);
-            await AddMessage(agentMsg, false);
-            await InvokeAsync(StateHasChanged);
-        });
-
-        _hubConnection.On<ICollection<string>>("ReceiveMissingParametersAsync", async missingParameters =>
-        {
-            _approvalRequired = true;
-            var message = $"Missing Parameters:{Environment.NewLine} {string.Join(", ", missingParameters)}";
-            var agentMsg = ChatMessageViewModel.CreateAgentMessage(message);
             await AddMessage(agentMsg, false);
             await InvokeAsync(StateHasChanged);
         });
@@ -108,35 +93,6 @@
             var agentMsg = ChatMessageViewModel.CreateAgentMessage(string.Empty);
             await AddMessage(agentMsg, true);
             await McpService.CodeAgentStreamAsync(ChatViewModel.ChatId, _hubConnection!.ConnectionId!, input, chunk =>
-            {
-                agentMsg.Text += chunk;
-                _ = ScrollToBottom(true);
-            }, _cancellationTokenSource.Token);
-        }
-        catch (Exception e)
-        {
-            _errorMessage = e.Message;
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private async Task Approve()
-    {
-        _isLoading = true;
-        _errorMessage = string.Empty;
-        _cancellationTokenSource = new CancellationTokenSource();
-
-        await AddMessage(ChatMessageViewModel.CreateUserMessage("Approve"));
-
-        try
-        {
-            _approvalRequired = false;
-            var agentMsg = ChatMessageViewModel.CreateAgentMessage(string.Empty);
-            await AddMessage(agentMsg, true);
-            await McpService.CodeAgentApproveStreamAsync(ChatViewModel.ChatId,  true, chunk =>
             {
                 agentMsg.Text += chunk;
                 _ = ScrollToBottom(true);

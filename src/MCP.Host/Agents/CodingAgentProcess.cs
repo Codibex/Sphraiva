@@ -24,8 +24,7 @@ public class CodingAgentProcess(IKernelFactory kernelFactory, IHubContext<Coding
 
     public async Task RunAsync(CodingAgentImplementationTask implementationTask, CancellationToken cancellationToken)
     {
-
-        ProcessBuilder processBuilder = new($"CodingAgent-{implementationTask.ChatId}");
+        ProcessBuilder processBuilder = new($"coding-agent-{implementationTask.ChatId}");
 
         // Add the steps
         var gatherRequirementStep = processBuilder.AddStepFromType<GatherRequirementStep>();

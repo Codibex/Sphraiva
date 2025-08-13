@@ -11,7 +11,7 @@ using System.ComponentModel;
 
 namespace MCP.Host.Agents;
 
-public class CodingFlowProcess(IKernelFactory kernelFactory, IHubContext<CodingAgentHub, ICodingAgentHub> hubContext, ILoggerFactory loggerFactory)
+public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<CodingAgentHub, ICodingAgentHub> hubContext, ILoggerFactory loggerFactory)
 {
     public async Task RunAsync(FlowParameter parameter)
     {
