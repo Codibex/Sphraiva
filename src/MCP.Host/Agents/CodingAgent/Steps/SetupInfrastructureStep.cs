@@ -1,14 +1,16 @@
 ﻿using System.Text.RegularExpressions;
+using MCP.Host.Agents.Steps;
 using MCP.Host.Plugins;
 using Microsoft.SemanticKernel;
 
-namespace MCP.Host.Agents.Steps;
+namespace MCP.Host.Agents.CodingAgent.Steps;
 
 public class SetupInfrastructureStep : KernelProcessStep
 {
     public static class OutputEvents
     {
         public const string SETUP_INFRASTRUCTURE_SUCCEEDED = nameof(SETUP_INFRASTRUCTURE_SUCCEEDED);
+        public const string SETUP_INFRASTRUCTURE_FAILED = nameof(SETUP_INFRASTRUCTURE_FAILED);
     }
 
     [KernelFunction]
@@ -38,7 +40,6 @@ public class SetupInfrastructureStep : KernelProcessStep
         };
 
         var cloneRepositoryResult = await CloneRepositoryAsync(plugin, codingProcessContext);
-
 
         await context.EmitEventAsync(OutputEvents.SETUP_INFRASTRUCTURE_SUCCEEDED, data: new
         {

@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Text.Json;
+using MCP.Host.Agents.CodingAgent;
+using MCP.Host.Agents.CodingAgent.Steps;
 using MCP.Host.Agents.Steps;
 using MCP.Host.Hubs;
 using MCP.Host.Services;
@@ -10,11 +12,6 @@ using Microsoft.SemanticKernel.Connectors.Ollama;
 using static MCP.Host.Agents.GenerateDocumentationStep;
 
 namespace MCP.Host.Agents;
-
-public static class CodingAgentProcessTopics
-{
-    public const string REQUEST_REQUIREMENT_UPDATE = nameof(REQUEST_REQUIREMENT_UPDATE);
-}
 
 public class CodingAgentProcess(IKernelFactory kernelFactory, IHubContext<CodingAgentHub, ICodingAgentHub> hubContext)
 {
@@ -38,22 +35,22 @@ public class CodingAgentProcess(IKernelFactory kernelFactory, IHubContext<Coding
         var docsProofreadStep = processBuilder.AddStepFromType<ProofreadStep>();
         var docsPublishStep = processBuilder.AddStepFromType<PublishDocumentationStep>();
 
-        var proxyStep = processBuilder.AddProxyStep("workflowProxy", [CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE, "RequestUserReview", "PublishDocumentation"]);
+        var proxyStep = processBuilder.AddProxyStep("workflowProxy", [CodingAgentWorkflowTopics.REQUEST_REQUIREMENT_UPDATE, "RequestUserReview", "PublishDocumentation"]);
 
         // Orchestrate the events
 
         processBuilder
-            .OnInputEvent(GatherRequirementStep.START_REQUIREMENT_IMPLEMENTATION)
+            .OnInputEvent(GatherRequirementStep.ProcessStepFunctions.START_REQUIREMENT_IMPLEMENTATION)
             .SendEventTo(new(gatherRequirementStep));
         
         // Hooking up the process steps
         gatherRequirementStep
             .OnFunctionResult()
-            .SendEventTo(new ProcessFunctionTargetBuilder(inputCheckStep, functionName: InputCheckStep.ProcessFunctions.CHECK_INPUT));
+            .SendEventTo(new ProcessFunctionTargetBuilder(inputCheckStep, functionName: InputCheckStep.ProcessStepFunctions.CHECK_INPUT));
 
         inputCheckStep
             .OnEvent(InputCheckStep.OutputEvents.INPUT_VALIDATION_FAILED)
-            .EmitExternalEvent(proxyStep, CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE);
+            .EmitExternalEvent(proxyStep, CodingAgentWorkflowTopics.REQUEST_REQUIREMENT_UPDATE);
 
         inputCheckStep
             .OnEvent(InputCheckStep.OutputEvents.INPUT_VALIDATION_SUCCEEDED)
@@ -111,14 +108,14 @@ public class CodingAgentProcess(IKernelFactory kernelFactory, IHubContext<Coding
         // -------------------
 
         _kernel = kernelFactory.Create();
-        _processMessageChannel = new CodingAgentProcessMessageChannel(implementationTask.ConnectionId, hubContext);
+        _processMessageChannel = new CodingAgentWorkflowMessageChannel(implementationTask.ConnectionId, hubContext);
 
         _process = processBuilder.Build();
 
         await _process.StartAsync(_kernel,
             new KernelProcessEvent
             {
-                Id = GatherRequirementStep.START_REQUIREMENT_IMPLEMENTATION,
+                Id = GatherRequirementStep.ProcessStepFunctions.START_REQUIREMENT_IMPLEMENTATION,
                 Data = implementationTask.Requirement
             },
             _processMessageChannel);
@@ -143,7 +140,7 @@ public class CodingAgentProcess(IKernelFactory kernelFactory, IHubContext<Coding
         await _process.StartAsync(_kernel,
             new KernelProcessEvent
             {
-                Id = GatherRequirementStep.START_REQUIREMENT_IMPLEMENTATION,
+                Id = GatherRequirementStep.ProcessStepFunctions.START_REQUIREMENT_IMPLEMENTATION,
                 Data = implementationTask.Requirement
             },
             _processMessageChannel);

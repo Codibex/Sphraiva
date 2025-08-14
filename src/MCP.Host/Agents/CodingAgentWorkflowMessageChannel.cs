@@ -1,10 +1,11 @@
-﻿using MCP.Host.Hubs;
+﻿using MCP.Host.Agents.CodingAgent;
+using MCP.Host.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.SemanticKernel;
 
 namespace MCP.Host.Agents;
 
-public class CodingAgentProcessMessageChannel(
+public class CodingAgentWorkflowMessageChannel(
     string implementationTaskConnectionId,
     IHubContext<CodingAgentHub, ICodingAgentHub> hubContext) : IExternalKernelProcessMessageChannel
 {
@@ -25,7 +26,7 @@ public class CodingAgentProcessMessageChannel(
     {
         switch (externalTopicEvent)
         {
-            case CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE:
+            case CodingAgentWorkflowTopics.REQUEST_REQUIREMENT_UPDATE:
                 await RequestMissingDataAsync(message);
                 break;
             case "RequestUserReview": 
@@ -46,6 +47,9 @@ public class CodingAgentProcessMessageChannel(
                     //await response.Body.FlushAsync();
                 }
 
+                break;
+            case CodingAgentWorkflowTopics.WORKFLOW_UPDATE:
+                await ReceiveImplementationUpdateAsync(message);
                 break;
         }
 
@@ -76,6 +80,15 @@ public class CodingAgentProcessMessageChannel(
         if (message.EventData?.ToObject() is ICollection<string> missingParameters)
         {
             await hubContext.Clients.Client(implementationTaskConnectionId).ReceiveMissingParametersAsync(missingParameters);
+        }
+    }
+
+    private async Task ReceiveImplementationUpdateAsync(KernelProcessProxyMessage message)
+    {
+        var update = message.EventData?.ToString();
+        if (!string.IsNullOrWhiteSpace(update))
+        {
+            await hubContext.Clients.Client(implementationTaskConnectionId).ReceiveImplementationUpdateAsync(update);
         }
     }
 

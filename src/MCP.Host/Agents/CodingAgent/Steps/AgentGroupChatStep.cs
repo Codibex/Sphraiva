@@ -36,7 +36,6 @@ public class AgentGroupChatStep : KernelProcessStep
             });
         }
 
-
         var history = await GetChatHistoryAsync(chat);
 
         await context.EmitEventAsync(new KernelProcessEvent

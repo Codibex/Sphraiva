@@ -69,6 +69,13 @@
             await InvokeAsync(StateHasChanged);
         });
 
+        _hubConnection.On<string>("ReceiveImplementationUpdateAsync", async (document) =>
+        {
+            var agentMsg = ChatMessageViewModel.CreateAgentMessage(document);
+            await AddMessage(agentMsg, false);
+            await InvokeAsync(StateHasChanged);
+        });
+
         await _hubConnection.StartAsync();
     }
 

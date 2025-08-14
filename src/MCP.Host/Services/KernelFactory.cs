@@ -37,8 +37,7 @@ public class KernelFactory(IServiceProvider services, IMcpPluginCache pluginCach
         AddPlugins(true, kernelBuilder);
 
         kernelBuilder.Services.AddKeyedSingleton(ManagerAgentStep.REDUCER_SERVICE_KEY, SetupReducer(kernelBuilder.Build(), ManagerSummaryInstructions));
-        kernelBuilder.Services.AddKeyedSingleton(AgentGroupChatStep.REDUCER_SERVICE_KEY, SetupReducer(kernelBuilder.Build(), SuggestionSummaryInstructions));
-
+        
         kernelBuilder.Services.AddKeyedSingleton(ManagerAgentStep.AGENT_SERVICE_KEY, managerAgent);
         kernelBuilder.Services.AddSingleton(chat);
 

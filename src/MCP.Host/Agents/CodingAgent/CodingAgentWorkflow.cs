@@ -1,7 +1,6 @@
 ﻿using MCP.Host.Agents.CodingAgent.Events;
 using MCP.Host.Agents.CodingAgent.Prompts;
 using MCP.Host.Agents.CodingAgent.Steps;
-using MCP.Host.Agents.Steps;
 using MCP.Host.Hubs;
 using MCP.Host.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -63,12 +62,12 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         var kernel2 = kernelFactory.CreateAgentGroupChatKernel(managerAgent, chat);
         
         var process = SetupProcess(parameter.ChatId);
-        IExternalKernelProcessMessageChannel processMessageChannel = new CodingAgentProcessMessageChannel(parameter.ConnectionId, hubContext);
+        IExternalKernelProcessMessageChannel processMessageChannel = new CodingAgentWorkflowMessageChannel(parameter.ConnectionId, hubContext);
         
         await process.StartAsync(kernel2,
             new KernelProcessEvent
             {
-                Id = GatherRequirementStep.START_REQUIREMENT_IMPLEMENTATION,
+                Id = GatherRequirementStep.ProcessStepFunctions.START_REQUIREMENT_IMPLEMENTATION,
                 Data = parameter.Requirement
             },
             processMessageChannel);
@@ -85,20 +84,20 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         var managerAgentStep = processBuilder.AddStepFromType<ManagerAgentStep>();
         var agentGroupStep = processBuilder.AddStepFromType<AgentGroupChatStep>();
 
-        var proxyStep = processBuilder.AddProxyStep("workflowProxy", [CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE, "RequestUserReview", "PublishDocumentation"]);
+        var proxyStep = processBuilder.AddProxyStep("codingAgentWorkflowProxy", [CodingAgentWorkflowTopics.REQUEST_REQUIREMENT_UPDATE, CodingAgentWorkflowTopics.WORKFLOW_UPDATE, "PublishDocumentation"]);
 
         processBuilder
-            .OnInputEvent(GatherRequirementStep.START_REQUIREMENT_IMPLEMENTATION)
+            .OnInputEvent(GatherRequirementStep.ProcessStepFunctions.START_REQUIREMENT_IMPLEMENTATION)
             .SendEventTo(new(gatherRequirementStep));
 
         // Hooking up the process steps
         gatherRequirementStep
             .OnFunctionResult()
-            .SendEventTo(new ProcessFunctionTargetBuilder(inputCheckStep, functionName: InputCheckStep.ProcessFunctions.CHECK_INPUT));
+            .SendEventTo(new ProcessFunctionTargetBuilder(inputCheckStep, functionName: InputCheckStep.ProcessStepFunctions.CHECK_INPUT));
 
         inputCheckStep
             .OnEvent(InputCheckStep.OutputEvents.INPUT_VALIDATION_FAILED)
-            .EmitExternalEvent(proxyStep, CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE)
+            .EmitExternalEvent(proxyStep, CodingAgentWorkflowTopics.REQUEST_REQUIREMENT_UPDATE)
             .StopProcess();
 
         inputCheckStep
@@ -119,6 +118,11 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         managerAgentStep
             .OnEvent(AgentOrchestrationEvents.GroupInput)
             .SendEventTo(new ProcessFunctionTargetBuilder(agentGroupStep, parameterName: "input"));
+
+        // Provide group messages to public hub
+        agentGroupStep
+            .OnEvent(AgentOrchestrationEvents.GroupMessage)
+            .EmitExternalEvent(proxyStep, CodingAgentWorkflowTopics.WORKFLOW_UPDATE);
 
         // Provide inner response to primary agent
         agentGroupStep

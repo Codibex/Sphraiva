@@ -1,14 +1,13 @@
-﻿using Microsoft.SemanticKernel;
+﻿using MCP.Host.Agents.Steps;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace MCP.Host.Agents.Steps;
+namespace MCP.Host.Agents.CodingAgent.Steps;
 
-public class InputCheckStep : KernelProcessStep<InputCheckStep.InputCheckState>
+public class InputCheckStep : KernelProcessStep
 {
-    private InputCheckState _state = new();
-
     private const string SYSTEM_PROMPT =
         """
         Your job is to check if all necessary parameters provided by the user.
@@ -23,7 +22,7 @@ public class InputCheckStep : KernelProcessStep<InputCheckStep.InputCheckState>
         - MissingParameters: string[], an array of missing parameters.
         """;
 
-    public static class ProcessFunctions
+    public static class ProcessStepFunctions
     {
         public const string CHECK_INPUT = nameof(CHECK_INPUT);
     }
@@ -34,30 +33,26 @@ public class InputCheckStep : KernelProcessStep<InputCheckStep.InputCheckState>
         public const string INPUT_VALIDATION_FAILED = nameof(INPUT_VALIDATION_FAILED);
     }
 
-    public override ValueTask ActivateAsync(KernelProcessStepState<InputCheckState> state)
-    {
-        _state = state.State!;
-        _state.ChatHistory ??= new ChatHistory(SYSTEM_PROMPT);
-
-        return base.ActivateAsync(state);
-    }
-
-    [KernelFunction(ProcessFunctions.CHECK_INPUT)]
+    [KernelFunction(ProcessStepFunctions.CHECK_INPUT)]
     public async Task CheckInputAsync(Kernel kernel, KernelProcessStepContext context, string requirement)
     {
         var logger = kernel.GetRequiredService<ILogger<InputCheckStep>>();
         logger.LogInformation("Verify requirement");
 
-        _state.ChatHistory!.AddUserMessage(requirement);
+        var chatHistory = new ChatHistory(SYSTEM_PROMPT);
+
+        chatHistory.AddUserMessage(requirement);
 
         var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
-        var response = await chatCompletionService.GetChatMessageContentAsync(_state.ChatHistory!);
-        
-        if (response is null)
+        var response = await chatCompletionService.GetChatMessageContentAsync(chatHistory);
+
+        if (string.IsNullOrWhiteSpace(response.Content))
         {
-            throw new InvalidOperationException("Chat completion response is null.");
+            logger.LogError("Response from agent is not valid.");
+            await context.EmitEventAsync(OutputEvents.INPUT_VALIDATION_FAILED, data: "Response from agent is not valid.");
+            return;
         }
-        
+
         InputCheckResult? checkResult;
         try
         {
@@ -70,25 +65,24 @@ public class InputCheckStep : KernelProcessStep<InputCheckStep.InputCheckState>
         catch(Exception e)
         {
             logger.LogError(e, "Failed to deserialize InputCheckResult from response: {ResponseContent}", response.Content);
-            throw;
+            await context.EmitEventAsync(OutputEvents.INPUT_VALIDATION_FAILED, data: e.Message);
+            return;
         }
 
         if (checkResult is null)
         {
-            throw new InvalidOperationException("Deserialized InputCheckResult object is null.");
+            logger.LogError("Deserialized InputCheckResult object is null.");
+            await context.EmitEventAsync(OutputEvents.INPUT_VALIDATION_FAILED, data: "Response from agent is not valid.");
+            return;
         }
 
         if (checkResult.MissingParameters.Count == 0)
         {
-            await context.EmitEventAsync(OutputEvents.INPUT_VALIDATION_SUCCEEDED, data: checkResult, KernelProcessEventVisibility.Public);
+            await context.EmitEventAsync(OutputEvents.INPUT_VALIDATION_SUCCEEDED, data: checkResult);
             return;
         }
 
-        await context.EmitEventAsync(OutputEvents.INPUT_VALIDATION_FAILED, data: checkResult.MissingParameters, KernelProcessEventVisibility.Public);
-    }
-
-    public class InputCheckState
-    {
-        public ChatHistory? ChatHistory { get; set; }
+        logger.LogError("Input has missing parameters: {MissingParameters}", checkResult.MissingParameters);
+        await context.EmitEventAsync(OutputEvents.INPUT_VALIDATION_FAILED, data: checkResult.MissingParameters);
     }
 }
