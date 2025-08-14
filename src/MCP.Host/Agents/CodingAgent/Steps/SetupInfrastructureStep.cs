@@ -1,7 +1,7 @@
-﻿using System.Text.RegularExpressions;
-using MCP.Host.Agents.Steps;
+﻿using MCP.Host.Agents.Steps;
 using MCP.Host.Plugins;
 using Microsoft.SemanticKernel;
+using System.Text.RegularExpressions;
 
 namespace MCP.Host.Agents.CodingAgent.Steps;
 
@@ -19,27 +19,36 @@ public class SetupInfrastructureStep : KernelProcessStep
         var logger = kernel.GetRequiredService<ILogger<InputCheckStep>>();
         logger.LogInformation("Setup infrastructure");
 
-        if (!kernel.Plugins.TryGetPlugin(PluginDescriptions.SphraivaPlugin.NAME, out var plugin))
+        var plugin = await GetPluginAsync(kernel, context, logger);
+        if (plugin is null)
         {
-            throw new InvalidOperationException($"{PluginDescriptions.SphraivaPlugin.NAME} plugin is not available.");
+            return;
         }
 
-        var containerCreationResult = await CreateContainerAsync(plugin, input);
-
-        var match = Regex.Match(containerCreationResult, @"Started container successfully: (\S+)");
-        if (!match.Success)
+        var containerCreationResult = await CreateContainerAsync(context, plugin, input, logger);
+        if (containerCreationResult is null)
         {
-            throw new InvalidOperationException("Failed to parse container creation result.");
+            return;
+        }
+
+        var containerName = await ParseContainerCreationResultAsync(context, containerCreationResult, logger);
+        if (containerName is null)
+        {
+            return;
         }
 
         var codingProcessContext = new CodingProcessContext
         {
-            ContainerName = match.Groups[1].Value.Trim('"'),
+            ContainerName = containerName,
             RepositoryName = input.RepositoryName,
             Requirement = input.Requirement
         };
 
-        var cloneRepositoryResult = await CloneRepositoryAsync(plugin, codingProcessContext);
+        var cloneRepositoryResult = await CloneRepositoryAsync(context, plugin, codingProcessContext, logger);
+        if (cloneRepositoryResult is null)
+        {
+            return;
+        }
 
         await context.EmitEventAsync(OutputEvents.SETUP_INFRASTRUCTURE_SUCCEEDED, data: new
         {
@@ -50,36 +59,72 @@ public class SetupInfrastructureStep : KernelProcessStep
         });
     }
 
-    private static async Task<string> CreateContainerAsync(KernelPlugin plugin, InputCheckResult input)
+    private static async Task<KernelPlugin?> GetPluginAsync(Kernel kernel, KernelProcessStepContext context, ILogger<InputCheckStep> logger)
     {
-        if (!plugin.TryGetFunction(PluginDescriptions.SphraivaPlugin.Functions.CREATE_DEV_CONTAINER, out var function))
+        if (kernel.Plugins.TryGetPlugin(PluginDescriptions.SphraivaPlugin.NAME, out var plugin))
         {
-            throw new InvalidOperationException($"Function {PluginDescriptions.SphraivaPlugin.Functions.CREATE_DEV_CONTAINER} is not available in {PluginDescriptions.SphraivaPlugin.NAME} plugin.");
+            return plugin;
         }
 
-        var arguments = new KernelArguments
-        {
-            ["instructionName"] = input.InstructionName,
-        };
+        logger.LogError($"{PluginDescriptions.SphraivaPlugin.NAME} plugin is not available.");
+        await context.EmitEventAsync(OutputEvents.SETUP_INFRASTRUCTURE_FAILED, data: "Setup not possible.");
+        return null;
 
-        var rawResponse = await function.InvokeAsync(arguments);
-        return rawResponse?.ToString() ?? string.Empty;
     }
 
-    private static async Task<string> CloneRepositoryAsync(KernelPlugin plugin, CodingProcessContext codingProcessContext)
+    private static async Task<string?> CreateContainerAsync(KernelProcessStepContext context, KernelPlugin plugin,
+        InputCheckResult input, ILogger<InputCheckStep> logger)
     {
-        if (!plugin.TryGetFunction(PluginDescriptions.SphraivaPlugin.Functions.CLONE_REPOSITORY_IN_DEV_CONTAINER, out var function))
+        if (plugin.TryGetFunction(PluginDescriptions.SphraivaPlugin.Functions.CREATE_DEV_CONTAINER, out var function))
         {
-            throw new InvalidOperationException($"Function {PluginDescriptions.SphraivaPlugin.Functions.CREATE_DEV_CONTAINER} is not available in {PluginDescriptions.SphraivaPlugin.NAME} plugin.");
+            var arguments = new KernelArguments
+            {
+                ["instructionName"] = input.InstructionName,
+            };
+
+            var rawResponse = await function.InvokeAsync(arguments);
+            return rawResponse?.ToString();
         }
 
-        var arguments = new KernelArguments
-        {
-            ["containerName"] = codingProcessContext.ContainerName,
-            ["repositoryName"] = codingProcessContext.RepositoryName,
-        };
+        logger.LogError("Function {CreateDevContainerFunction} is not available in {PluginName} plugin.", 
+            PluginDescriptions.SphraivaPlugin.Functions.CREATE_DEV_CONTAINER, PluginDescriptions.SphraivaPlugin.NAME);
+        await context.EmitEventAsync(OutputEvents.SETUP_INFRASTRUCTURE_FAILED, data: "Setup not possible.");
+        return null;
+    }
 
-        var rawResponse = await function.InvokeAsync(arguments);
-        return rawResponse?.ToString() ?? string.Empty;
+    private static async Task<string?> ParseContainerCreationResultAsync(KernelProcessStepContext context,
+        string containerCreationResult, ILogger<InputCheckStep> logger)
+    {
+        var match = Regex.Match(containerCreationResult, @"Started container successfully: (\S+)");
+        if (match.Success)
+        {
+            return match.Groups[1].Value.Trim('"');
+        }
+
+        logger.LogError("Failed to parse container creation result: {containerCreationResult}",
+            containerCreationResult);
+        await context.EmitEventAsync(OutputEvents.SETUP_INFRASTRUCTURE_FAILED,
+            data: "Failed to parse container creation result.");
+        return null;
+    }
+
+    private static async Task<string?> CloneRepositoryAsync(KernelProcessStepContext context, KernelPlugin plugin, CodingProcessContext codingProcessContext, ILogger<InputCheckStep> logger)
+    {
+        if (plugin.TryGetFunction(PluginDescriptions.SphraivaPlugin.Functions.CLONE_REPOSITORY_IN_DEV_CONTAINER, out var function))
+        {
+            var arguments = new KernelArguments
+            {
+                ["containerName"] = codingProcessContext.ContainerName,
+                ["repositoryName"] = codingProcessContext.RepositoryName,
+            };
+
+            var rawResponse = await function.InvokeAsync(arguments);
+            return rawResponse?.ToString();
+        }
+
+        logger.LogError("Function {CloneRepositoryFunction} is not available in {PluginName} plugin.", 
+            PluginDescriptions.SphraivaPlugin.Functions.CLONE_REPOSITORY_IN_DEV_CONTAINER, PluginDescriptions.SphraivaPlugin.NAME);
+        await context.EmitEventAsync(OutputEvents.SETUP_INFRASTRUCTURE_FAILED, data: "Setup not possible.");
+        return null;
     }
 }

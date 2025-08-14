@@ -85,7 +85,7 @@ public class CodingAgentWorkflowMessageChannel(
 
     private async Task ReceiveImplementationUpdateAsync(KernelProcessProxyMessage message)
     {
-        var update = message.EventData?.ToString();
+        var update = message.EventData?.ToObject()?.ToString();
         if (!string.IsNullOrWhiteSpace(update))
         {
             await hubContext.Clients.Client(implementationTaskConnectionId).ReceiveImplementationUpdateAsync(update);

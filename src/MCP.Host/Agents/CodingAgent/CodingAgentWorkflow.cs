@@ -84,7 +84,7 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         var managerAgentStep = processBuilder.AddStepFromType<ManagerAgentStep>();
         var agentGroupStep = processBuilder.AddStepFromType<AgentGroupChatStep>();
 
-        var proxyStep = processBuilder.AddProxyStep("codingAgentWorkflowProxy", [CodingAgentWorkflowTopics.REQUEST_REQUIREMENT_UPDATE, CodingAgentWorkflowTopics.WORKFLOW_UPDATE, "PublishDocumentation"]);
+        var proxyStep = processBuilder.AddProxyStep("codingAgentWorkflowProxy", [CodingAgentWorkflowTopics.REQUEST_REQUIREMENT_UPDATE, CodingAgentWorkflowTopics.WORKFLOW_UPDATE, CodingAgentWorkflowTopics.SETUP_INFRASTRUCTURE_FAILED, "PublishDocumentation"]);
 
         processBuilder
             .OnInputEvent(GatherRequirementStep.ProcessStepFunctions.START_REQUIREMENT_IMPLEMENTATION)
@@ -108,6 +108,11 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
             .OnEvent(SetupInfrastructureStep.OutputEvents.SETUP_INFRASTRUCTURE_SUCCEEDED)
             .SendEventTo(new ProcessFunctionTargetBuilder(managerAgentStep,
                 ManagerAgentStep.ProcessStepFunctions.INVOKE_AGENT));
+
+        setupInfrastructureStep
+            .OnEvent(SetupInfrastructureStep.OutputEvents.SETUP_INFRASTRUCTURE_FAILED)
+            .EmitExternalEvent(proxyStep, CodingAgentWorkflowTopics.SETUP_INFRASTRUCTURE_FAILED)
+            .StopProcess();
 
         // Delegate to inner agents
         managerAgentStep

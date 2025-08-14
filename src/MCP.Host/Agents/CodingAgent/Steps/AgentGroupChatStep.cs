@@ -24,7 +24,8 @@ public class AgentGroupChatStep : KernelProcessStep
         chat.AddChatMessage(message);
         await context.EmitEventAsync(new KernelProcessEvent
         {
-            Id = AgentOrchestrationEvents.GroupMessage, Data = message
+            Id = AgentOrchestrationEvents.GroupMessage,
+            Data = message
         });
 
         await foreach (var response in chat.InvokeAsync())
