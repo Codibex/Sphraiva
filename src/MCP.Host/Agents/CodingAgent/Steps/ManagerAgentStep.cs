@@ -131,12 +131,4 @@ public class ManagerAgentStep : KernelProcessStep
 
     private static TAgent GetAgent<TAgent>(Kernel kernel, string key) where TAgent : Agent =>
         kernel.Services.GetRequiredKeyedService<TAgent>(key);
-
-    private static async Task<string> SummarizeHistoryAsync(Kernel kernel, string key, IReadOnlyList<ChatMessageContent> history)
-    {
-        var reducer = kernel.Services.GetRequiredKeyedService<ChatHistorySummarizationReducer>(key);
-        var reducedResponse = await reducer.ReduceAsync(history);
-        var summary = reducedResponse?.First() ?? throw new InvalidDataException("No summary available");
-        return summary.ToString();
-    }
 }
