@@ -63,9 +63,10 @@ public record Prompt_Qwen3_14b() : PromptBase(
     5. Consolidate all messages into a single response.
     
     ## Tool Usage
-    When you need to run a command, call the tool using:
-    {"name": "bash_command", "arguments": {"command": "<your command here>"}}
-    Only use read-only commands (grep, find, cat, ls, etc.).
+    - Only use read-only commands (grep, find, cat, ls, etc.).
+    - Always use the correct commands to find invisible (dot-prefixed) files and folders as well.
+      - Example: use `ls -la` instead of `ls`, or add `-name ".*"` in `find` when appropriate.
+    - Ensure that searches and listings include both visible and hidden files.
     
     You must actively use tools to gather information. Never skip tool usage.
     
