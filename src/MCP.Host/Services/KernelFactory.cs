@@ -2,7 +2,6 @@ using MCP.Host.Agents.CodingAgent.Steps;
 using MCP.Host.Plugins;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
-using Microsoft.SemanticKernel.ChatCompletion;
 using OllamaSharp;
 
 namespace MCP.Host.Services;
@@ -36,13 +35,8 @@ public class KernelFactory(IServiceProvider services, IMcpPluginCache pluginCach
 
         AddPlugins(true, kernelBuilder);
 
-        kernelBuilder.Services.AddKeyedSingleton(ManagerAgentStep.REDUCER_SERVICE_KEY, SetupReducer(kernelBuilder.Build(), ManagerSummaryInstructions));
-        
         kernelBuilder.Services.AddKeyedSingleton(ManagerAgentStep.AGENT_SERVICE_KEY, managerAgent);
         kernelBuilder.Services.AddSingleton(chat);
-
-        
-        
 
         return kernelBuilder.Build();
     }
@@ -66,20 +60,4 @@ public class KernelFactory(IServiceProvider services, IMcpPluginCache pluginCach
         kernelBuilder.Plugins.AddFromFunctions(PluginDescriptions.SphraivaPlugin.NAME,
             tools.Select(t => t.AsKernelFunction()));
     }
-
-    private static ChatHistorySummarizationReducer SetupReducer(Kernel kernel, string instructions) =>
-        new(kernel.GetRequiredService<IChatCompletionService>(), 1)
-        {
-            SummarizationInstructions = instructions
-        };
-
-    private const string ManagerSummaryInstructions =
-        """
-        Summarize the most recent user request in first person command form.
-        """;
-
-    private const string SuggestionSummaryInstructions =
-        """
-        Address the user directly with a summary of the response.
-        """;
 }
