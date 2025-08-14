@@ -98,7 +98,8 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
 
         inputCheckStep
             .OnEvent(InputCheckStep.OutputEvents.INPUT_VALIDATION_FAILED)
-            .EmitExternalEvent(proxyStep, CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE);
+            .EmitExternalEvent(proxyStep, CodingAgentProcessTopics.REQUEST_REQUIREMENT_UPDATE)
+            .StopProcess();
 
         inputCheckStep
             .OnEvent(InputCheckStep.OutputEvents.INPUT_VALIDATION_SUCCEEDED)
@@ -107,12 +108,12 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         setupInfrastructureStep
             .OnEvent(SetupInfrastructureStep.OutputEvents.SETUP_INFRASTRUCTURE_SUCCEEDED)
             .SendEventTo(new ProcessFunctionTargetBuilder(managerAgentStep,
-                ManagerAgentStep.ProcessStepFunctions.InvokeAgent));
+                ManagerAgentStep.ProcessStepFunctions.INVOKE_AGENT));
 
         // Delegate to inner agents
         managerAgentStep
             .OnEvent(AgentOrchestrationEvents.AgentWorking)
-            .SendEventTo(new ProcessFunctionTargetBuilder(managerAgentStep, ManagerAgentStep.ProcessStepFunctions.InvokeGroup));
+            .SendEventTo(new ProcessFunctionTargetBuilder(managerAgentStep, ManagerAgentStep.ProcessStepFunctions.INVOKE_GROUP));
 
         // Provide input to inner agents
         managerAgentStep
@@ -122,7 +123,7 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         // Provide inner response to primary agent
         agentGroupStep
             .OnEvent(AgentOrchestrationEvents.GroupCompleted)
-            .SendEventTo(new ProcessFunctionTargetBuilder(managerAgentStep, ManagerAgentStep.ProcessStepFunctions.ReceiveResponse, parameterName: "response"));
+            .SendEventTo(new ProcessFunctionTargetBuilder(managerAgentStep, ManagerAgentStep.ProcessStepFunctions.RECEIVE_RESPONSE, parameterName: "response"));
 
         return processBuilder.Build();
     }

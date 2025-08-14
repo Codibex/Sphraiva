@@ -7,21 +7,19 @@ namespace MCP.Host.Agents.CodingAgent.Steps;
 
 public class AgentGroupChatStep : KernelProcessStep
 {
-    public const string ChatServiceKey = $"{nameof(AgentGroupChatStep)}:{nameof(ChatServiceKey)}";
-    public const string ReducerServiceKey = $"{nameof(AgentGroupChatStep)}:{nameof(ReducerServiceKey)}";
+    public const string CHAT_SERVICE_KEY = $"{nameof(AgentGroupChatStep)}:{nameof(CHAT_SERVICE_KEY)}";
+    public const string REDUCER_SERVICE_KEY = $"{nameof(AgentGroupChatStep)}:{nameof(REDUCER_SERVICE_KEY)}";
 
     public static class ProcessStepFunctions
     {
-        public const string InvokeAgentGroup = nameof(InvokeAgentGroup);
+        public const string INVOKE_AGENT_GROUP = nameof(INVOKE_AGENT_GROUP);
     }
 
-    [KernelFunction(ProcessStepFunctions.InvokeAgentGroup)]
+    [KernelFunction(ProcessStepFunctions.INVOKE_AGENT_GROUP)]
     public async Task InvokeAgentGroupAsync(KernelProcessStepContext context, Kernel kernel, string input)
     {
         var chat = kernel.GetRequiredService<AgentGroupChat>();
 
-        // Reset chat state from previous invocation
-        //await chat.ResetAsync();
         chat.IsComplete = false;
 
         ChatMessageContent message = new(AuthorRole.User, input);
@@ -36,7 +34,7 @@ public class AgentGroupChatStep : KernelProcessStep
         var history = await chat.GetChatMessagesAsync().Reverse().ToArrayAsync();
 
         // Summarize the group chat as a response to the primary agent
-        string summary = await SummarizeHistoryAsync(kernel, ReducerServiceKey, history);
+        string summary = await SummarizeHistoryAsync(kernel, REDUCER_SERVICE_KEY, history);
 
         await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupCompleted, Data = summary });
     }

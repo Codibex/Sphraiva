@@ -12,17 +12,17 @@ namespace MCP.Host.Agents.CodingAgent.Steps;
 /// </summary>
 public class ManagerAgentStep : KernelProcessStep
 {
-    public const string AgentServiceKey = $"{nameof(ManagerAgentStep)}:{nameof(AgentServiceKey)}";
-    public const string ReducerServiceKey = $"{nameof(ManagerAgentStep)}:{nameof(ReducerServiceKey)}";
+    public const string AGENT_SERVICE_KEY = $"{nameof(ManagerAgentStep)}:{nameof(AGENT_SERVICE_KEY)}";
+    public const string REDUCER_SERVICE_KEY = $"{nameof(ManagerAgentStep)}:{nameof(REDUCER_SERVICE_KEY)}";
 
     public static class ProcessStepFunctions
     {
-        public const string InvokeAgent = nameof(InvokeAgent);
-        public const string InvokeGroup = nameof(InvokeGroup);
-        public const string ReceiveResponse = nameof(ReceiveResponse);
+        public const string INVOKE_AGENT = nameof(INVOKE_AGENT);
+        public const string INVOKE_GROUP = nameof(INVOKE_GROUP);
+        public const string RECEIVE_RESPONSE = nameof(RECEIVE_RESPONSE);
     }
 
-    [KernelFunction(ProcessStepFunctions.InvokeAgent)]
+    [KernelFunction(ProcessStepFunctions.INVOKE_AGENT)]
     public async Task InvokeAgentAsync(KernelProcessStepContext context, Kernel kernel, string userInput, ILogger logger)
     {
         // Get the chat history
@@ -55,7 +55,7 @@ public class ManagerAgentStep : KernelProcessStep
         await context.EmitEventAsync(new() { Id = intentEventId });
     }
 
-    [KernelFunction(ProcessStepFunctions.InvokeGroup)]
+    [KernelFunction(ProcessStepFunctions.INVOKE_GROUP)]
     public async Task InvokeGroupAsync(KernelProcessStepContext context, Kernel kernel)
     {
         // Get the chat history
@@ -65,7 +65,7 @@ public class ManagerAgentStep : KernelProcessStep
         await context.EmitEventAsync(new() { Id = AgentOrchestrationEvents.GroupInput, Data = history.First() });
     }
 
-    [KernelFunction(ProcessStepFunctions.ReceiveResponse)]
+    [KernelFunction(ProcessStepFunctions.RECEIVE_RESPONSE)]
     public async Task ReceiveResponseAsync(KernelProcessStepContext context, Kernel kernel, string response)
     {
         // Get the chat history
@@ -73,7 +73,7 @@ public class ManagerAgentStep : KernelProcessStep
         var history = historyProvider.Get();
 
         // Proxy the inner response
-        var agent = GetAgent<ChatCompletionAgent>(kernel, AgentServiceKey);
+        var agent = GetAgent<ChatCompletionAgent>(kernel, AGENT_SERVICE_KEY);
         ChatMessageContent message = new(AuthorRole.Assistant, response) { AuthorName = agent.Name };
         history.Add(message);
 
