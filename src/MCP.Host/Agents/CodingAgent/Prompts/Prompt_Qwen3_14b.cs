@@ -86,7 +86,7 @@ public record Prompt_Qwen3_14b() : PromptBase(
     7. When all changes are implemented, verified, and pushed, provide a **single final message** with the full result.
     
     ## Constraints
-    - Only modify files in the `/workspace` folder.
+    - Only modify files inside the `/workspace` folder and its subfolders (including hidden folders such as `.github`, but excluding `.git`).
     - Do not modify third-party code, generated files, or external dependencies.
     - Do not ask questions or make assumptions.
     - Do not include `<think>` or similar internal reasoning in the output.
