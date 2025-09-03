@@ -16,6 +16,7 @@ public class AgentGroupChatStep : KernelProcessStep
     [KernelFunction(ProcessStepFunctions.INVOKE_AGENT_GROUP)]
     public async Task InvokeAgentGroupAsync(KernelProcessStepContext context, Kernel kernel, string input)
     {
+        var logger = kernel.GetRequiredService<ILogger<InputCheckStep>>();
         var chat = kernel.GetRequiredService<AgentGroupChat>();
 
         chat.IsComplete = false;
@@ -30,6 +31,7 @@ public class AgentGroupChatStep : KernelProcessStep
 
         await foreach (var response in chat.InvokeAsync())
         {
+            logger.LogDebug("Agent group chat response: {response}", response.Content);
             await context.EmitEventAsync(new KernelProcessEvent
             {
                 Id = AgentOrchestrationEvents.GroupMessage, 
