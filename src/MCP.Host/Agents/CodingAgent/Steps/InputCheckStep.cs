@@ -59,7 +59,7 @@ public class InputCheckStep : KernelProcessStep
         try
         {
             var regex = new Regex(@"^```(?:json)?\s*([\s\S]*?)\s*```$", RegexOptions.Multiline);
-            var match = regex.Match(response.Content!);
+            var match = regex.Match(response.Content!.Trim());
             var json = match.Success ? match.Groups[1].Value.Trim() : response.Content!.Trim();
 
             checkResult = JsonSerializer.Deserialize<InputCheckResult>(json);
