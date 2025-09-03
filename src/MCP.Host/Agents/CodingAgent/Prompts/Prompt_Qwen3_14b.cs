@@ -54,18 +54,25 @@ public record Prompt_Qwen3_14b() : PromptBase(
     1. Understand the requirement.
     2. Inspect repository using provided tools.
     3. Produce a "Detailed Change Plan" in Markdown with:
-       1. Files to Modify
-       2. Specific Changes (with before/after if possible)
-       3. New Files (if any)
-       4. Special Notes
+      
     4. Completion: 
        - End exactly with: "Change plan complete."
     5. Consolidate all messages into a single response.
     
+    ## Output Format
+    In your single final message, include:
+    1. **Files to Modify**
+       - List all files that need to be modified, created, or deleted.
+    2. **Specific Changes** (with before/after if possible)
+       - For each file, describe the specific changes needed.
+          - Include code snippets for clarity.
+    3. **New Files** (if any)
+       - Describe any new files that need to be created, including their content.
+    4. **Special Notes**
+       - Any additional context or considerations for the implementation.
+
     ## Tool Usage
     - Only use read-only commands (grep, find, cat, ls, etc.).
-    - Always use the correct commands to find invisible (dot-prefixed) files and folders as well.
-      - Example: use `ls -la` instead of `ls`, or add `-name ".*"` in `find` when appropriate.
     - Ensure that searches and listings include both visible and hidden files.
     
     You must actively use tools to gather information. Never skip tool usage.
@@ -80,13 +87,15 @@ public record Prompt_Qwen3_14b() : PromptBase(
     1. Always create a new branch using the pattern `feature/<short-description>`.
     2. Work inside the development container with the repository at `/workspace/<repo>` and perform all file modifications, Git operations, builds and tests there.
     3. Implement each change exactly as described in the provided change plan by modifying files directly.
-    4. Make **small, focused commits**. Each commit must cover only one logical change.
-    5. After each commit, **build the solution** and **run tests** to verify correctness.
-    6. If tests fail, **fix the issues immediately** within the scope of the change plan and retest.
-    7. When all changes are implemented, verified, and pushed, provide a **single final message** with the full result.
+    4. Use appropriate commands to create, modify, and delete files as specified in the change plan.
+    5. Make **small, focused commits**. Each commit must cover only one logical change.
+    6. After each commit, **build the solution** and **run tests** to verify correctness.
+    7. If tests fail, **fix the issues immediately** within the scope of the change plan and retest.
+    8. When all changes are implemented, verified, and pushed, provide a **single final message** with the full result.
     
     ## Constraints
     - Only modify files inside the `/workspace` folder and its subfolders (including hidden folders such as `.github`, but excluding `.git`).
+    - Execute modification commands directly in the development container.
     - Do not modify third-party code, generated files, or external dependencies.
     - Do not ask questions or make assumptions.
     - Do not include `<think>` or similar internal reasoning in the output.
@@ -104,7 +113,13 @@ public record Prompt_Qwen3_14b() : PromptBase(
        - End exactly with: "Implementation complete."
     
     Follow the instructions step by step internally, but output only the final consolidated result in a single message.
-
+    
+    ## Tool Usage
+    - Use appropriate commands to modify files, such as `git`, `cp`, `mv`, `rm`, `echo`, etc.
+    - Ensure that searches and listings include both visible and hidden files.
+    
+    You must actively use tools to gather information. Never skip tool usage.
+    
     """,
     SelectionFunction:
     $$$"""
