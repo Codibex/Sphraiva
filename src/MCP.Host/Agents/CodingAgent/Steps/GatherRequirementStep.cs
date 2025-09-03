@@ -1,11 +1,14 @@
 ﻿using Microsoft.SemanticKernel;
 
-namespace MCP.Host.Agents.Steps;
+namespace MCP.Host.Agents.CodingAgent.Steps;
 
 public class GatherRequirementStep : KernelProcessStep
 {
-    public const string START_REQUIREMENT_IMPLEMENTATION = nameof(START_REQUIREMENT_IMPLEMENTATION);
-
+    public static class ProcessStepFunctions
+    {
+        public const string START_REQUIREMENT_IMPLEMENTATION = nameof(START_REQUIREMENT_IMPLEMENTATION);
+    }
+    
     [KernelFunction]
     public string GatherRequirementData(Kernel kernel, string requirement)
     {

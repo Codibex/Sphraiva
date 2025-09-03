@@ -1,4 +1,5 @@
 using MCP.Host.Agents;
+using MCP.Host.Agents.CodingAgent;
 using MCP.Host.Api;
 using MCP.Host.Chat;
 using MCP.Host.Hubs;
@@ -36,10 +37,10 @@ builder.Services.AddResponseCompression(options =>
 });
 
 builder.Services.AddTransient<CodingAgentProcess>();
-builder.Services.AddTransient<CodingFlowProcess>();
+builder.Services.AddTransient<CodingAgentWorkflow>();
 builder.Services.AddHostedService<CodingAgentBackgroundService>();
 builder.Services.AddSingleton<ICodingAgentChannel, CodingAgentChannel>();
-builder.Services.AddSingleton<ICodingAgentProcessStore, CodingAgentProcessStore>();
+builder.Services.AddSingleton<ICodingAgentWorkflowStore, CodingAgentWorkflowStore>();
 
 var app = builder.Build();
 
