@@ -1,4 +1,5 @@
 ﻿using MCP.Host.Agents.Steps;
+using Microsoft.AspNetCore.Http;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Text.Json;
@@ -48,8 +49,9 @@ public class InputCheckStep : KernelProcessStep
 
         if (string.IsNullOrWhiteSpace(response.Content))
         {
-            logger.LogError("Response from agent is not valid.");
-            await context.EmitEventAsync(OutputEvents.INPUT_VALIDATION_FAILED, data: "Response from agent is not valid.");
+            const string ERROR_MESSAGE = "Response from agent is not valid.";
+            logger.LogError(ERROR_MESSAGE);
+            await context.EmitEventAsync(OutputEvents.INPUT_VALIDATION_FAILED, data: ERROR_MESSAGE);
             return;
         }
 
