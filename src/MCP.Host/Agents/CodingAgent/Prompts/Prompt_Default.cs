@@ -196,6 +196,7 @@ public record Prompt_Default() : PromptBase(
     ## Constraints
     
     - **Only workspace folder allowed**: All changes must be restricted to the `/workspace` folder and subfolders.
+    - **Hidden folders**: Must be included, with the exception of `.git`.  
     - **Only working branches allowed**: Always create a new branch for each implementation task using the pattern `feature/<short-description>`. This is required for every implementation task.
     - **Only implement changes**: Do not perform any analysis or planning. Your task is to implement the planned changes in the repository.
     - **Own code only**: Only consider code that is part of the repository itself. Do **not** modify third-party dependencies, generated code, or external libraries unless explicitly included in the planned changes.
