@@ -1,6 +1,6 @@
 ﻿namespace MCP.Host.Agents.CodingAgent.Prompts;
 
-public record Prompt_Default() : PromptBase(
+public record Prompt_Devstral() : PromptBase(
     ManagerAgentInstructions:
     """
     ## Role

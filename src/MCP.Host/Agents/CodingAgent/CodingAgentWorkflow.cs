@@ -18,7 +18,7 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         // Plugin parameter can be false and added for specific agents
         var kernel = kernelFactory.Create(true);
 
-        var prompt = new Prompt_gpt_oss_20b();
+        var prompt = new Prompt_Devstral();
 
         var managerAgent = CreateAgent(AgentNames.MANAGER_AGENT_NAME, prompt.ManagerAgentInstructions, kernel.Clone());
         var analysisAgent = CreateAgent(AgentNames.ANALYSIS_AGENT_NAME, prompt.AnalysisAgentInstructions, kernel.Clone());
