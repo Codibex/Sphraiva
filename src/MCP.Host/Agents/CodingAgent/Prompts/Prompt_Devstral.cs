@@ -65,6 +65,7 @@ public record Prompt_Devstral() : PromptBase(
     
     ## Environment
     - You operate inside a development container with full read-only access to `/workspace/<repo>`.
+    - A development container with a cloned repository is available.
     - You can execute Bash commands to inspect and analyze files (read-only).
     
     ---
@@ -126,6 +127,7 @@ public record Prompt_Devstral() : PromptBase(
     ---
     
     ## Environment
+    - A development container with a cloned repository is available.
     - Full access to `/workspace/<repo>`.
     - You can modify files, create branches, commit changes, build the solution, and run tests.
     - Hidden files and folders must be included in searches and updates, except `.git`.
