@@ -1,5 +1,4 @@
 ﻿using MCP.Host.Agents.Steps;
-using Microsoft.AspNetCore.Http;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Text.Json;

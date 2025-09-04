@@ -1,8 +1,9 @@
-﻿using System.Text;
-using MCP.Host.Agents.CodingAgent.Events;
+﻿using MCP.Host.Agents.CodingAgent.Events;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.ChatCompletion;
+using System.Text;
+using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 
 namespace MCP.Host.Agents.CodingAgent.Steps;
 
@@ -29,16 +30,8 @@ public class AgentGroupChatStep : KernelProcessStep
             Data = message
         });
 
-        await foreach (var response in chat.InvokeAsync())
-        {
-            logger.LogDebug("Agent group chat response: {response}", response.Content);
-            await context.EmitEventAsync(new KernelProcessEvent
-            {
-                Id = AgentOrchestrationEvents.GroupMessage, 
-                Data = response
-            });
-        }
-
+        await InvokeGroupChatAsync(context, chat, logger);
+        
         var history = await GetChatHistoryAsync(chat);
 
         await context.EmitEventAsync(new KernelProcessEvent
@@ -46,6 +39,32 @@ public class AgentGroupChatStep : KernelProcessStep
             Id = AgentOrchestrationEvents.GroupCompleted, 
             Data = history
         });
+    }
+
+    private async Task InvokeGroupChatAsync(KernelProcessStepContext context, AgentGroupChat chat, ILogger<InputCheckStep> logger)
+    {
+        var isResponseEmpty = false;
+        await foreach (var response in chat.InvokeAsync())
+        {
+            logger.LogInformation("Agent group chat response from {author}: {response}", response.AuthorName, response.Content);
+            if (string.IsNullOrWhiteSpace(response.Content))
+            {
+                isResponseEmpty = true;
+                break;
+            }
+            await context.EmitEventAsync(new KernelProcessEvent
+            {
+                Id = AgentOrchestrationEvents.GroupMessage,
+                Data = response
+            });
+        }
+
+        if (isResponseEmpty)
+        {
+            ChatMessageContent message = new(AuthorRole.Developer, "Please continue your work! Use the tools whenever possible!");
+            chat.AddChatMessage(message);
+            await InvokeGroupChatAsync(context, chat, logger);
+        }
     }
 
     private static async Task<string> GetChatHistoryAsync(AgentGroupChat chat)
