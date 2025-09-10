@@ -15,3 +15,8 @@
 ## Jupyter Notebook
 
 - [AI Agents for beginners](https://github.com/microsoft/ai-agents-for-beginners)
+
+## Other links
+
+- [Agent Markdown](https://agents.md/)
+- [OpenAI Codex CLI](https://github.com/openai/codex)
