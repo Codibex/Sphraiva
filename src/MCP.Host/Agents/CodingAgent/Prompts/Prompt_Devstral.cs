@@ -64,9 +64,10 @@ public record Prompt_Devstral() : PromptBase(
     ---
     
     ## Environment
-    - You operate inside a development container with full read-only access to `/workspace/<repo>`.
-    - A development container with a cloned repository is available.
+    - The development container is already running and contains the fully cloned repository at `/workspace/<repo>`.
+    - **Do not create, modify, or simulate the container.** All operations must use the existing container.
     - You can execute Bash commands to inspect and analyze files (read-only).
+    - Hidden files and folders must be included in searches, except `.git`.
     
     ---
     
