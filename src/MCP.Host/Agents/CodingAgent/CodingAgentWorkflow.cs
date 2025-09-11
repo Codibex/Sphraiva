@@ -18,7 +18,7 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         // Plugin parameter can be false and added for specific agents
         var kernel = kernelFactory.Create(true);
 
-        var prompt = new Prompt_Devstral();
+        var prompt = new Prompt_Mistral_Nemo();
 
         var managerAgent = CreateAgent(AgentNames.MANAGER_AGENT_NAME, prompt.ManagerAgentInstructions, kernel.Clone());
         var analysisAgent = CreateAgent(AgentNames.ANALYSIS_AGENT_NAME, prompt.AnalysisAgentInstructions, kernel.Clone());
@@ -27,7 +27,7 @@ public class CodingAgentWorkflow(IKernelFactory kernelFactory, IHubContext<Codin
         var selectionFunction = AgentGroupChat.CreatePromptFunctionForStrategy(prompt.SelectionFunction);
         var terminationFunction = AgentGroupChat.CreatePromptFunctionForStrategy(prompt.TerminationFunction);
 
-        var chat = new AgentGroupChat(analysisAgent, implementationAgent)
+        var chat = new AgentGroupChat(managerAgent, analysisAgent, implementationAgent)
         {
             ExecutionSettings = new AgentGroupChatSettings
             {
