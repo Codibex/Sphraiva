@@ -10,16 +10,40 @@ public class InputCheckStep : KernelProcessStep
 {
     private const string SYSTEM_PROMPT =
         """
-        Your job is to check if all necessary parameters provided by the user.
-        The following parameters are required:
-        - Instruction name for the docker container creation.
-        - A repository name.
-        - A set of requirements for changes.
-        Respond with a json including the following properties:
-        - InstructionName: string, the instruction name for the docker container creation.
-        - RepositoryName: string, the repository name.
-        - Requirement: string, the set of requirements for changes.
-        - MissingParameters: string[], an array of missing parameters.
+        ---
+        **TASK: STRICT INPUT VALIDATION**
+        ---
+
+        ## **RULES (MANDATORY)**
+
+        1. **NO MODIFICATIONS**:
+           - Output values **exactly as provided** (including typos, case, and formatting).
+
+        2. **MATCHING**:
+           - Extract values from the entire text.
+           - Check if parts of the text can be matched with the output keys.
+           - Check if the whole text or parts of the text can be the requirement.
+
+        3. **OUTPUT FORMAT**:
+           - Respond **only** in valid JSON:
+             ```json
+             {
+               "InstructionName": "<exact_value>",
+               "RepositoryName": "<exact_value>",
+               "Requirement": "<exact_value>",
+               "MissingParameters": ["<missing_key_1>", "<missing_key_2>"]  // Empty if none
+             }
+             ```
+           - Set values to null if not found.
+           - All keys from the output are required, so if any of them cannot be found (e.g. `null`) or matched, it is missing.
+           - **No additional text or explanations**.
+
+        4. **MISSING PARAMETERS**:
+           - List missing keys in `MissingParameters`.
+           - If all keys are present, set `MissingParameters: []`.
+
+        ---
+        
         """;
 
     public static class ProcessStepFunctions
@@ -57,9 +81,9 @@ public class InputCheckStep : KernelProcessStep
         InputCheckResult? checkResult;
         try
         {
-            var regex = new Regex(@"^```(?:json)?\s*([\s\S]*?)\s*```$", RegexOptions.Multiline);
+            var regex = new Regex(@"(<\/think>)*\s*^\s*({[\s\S]*?})\s*$", RegexOptions.Multiline);
             var match = regex.Match(response.Content!.Trim());
-            var json = match.Success ? match.Groups[1].Value.Trim() : response.Content!.Trim();
+            var json = match.Success ? match.Groups[match.Groups.Count - 1].Value.Trim() : response.Content!.Trim();
 
             checkResult = JsonSerializer.Deserialize<InputCheckResult>(json);
         }
