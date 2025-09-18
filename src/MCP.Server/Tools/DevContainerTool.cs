@@ -13,12 +13,19 @@ namespace MCP.Server.Tools;
 public class DevContainerTool(IDevContainerService devContainerService)
 {
     [McpServerTool(Title = "Create development container", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
-    public async Task<string> CreateDevContainerAsync([Description("The instruction name is an arbitrary name and is not related to any Docker image name.")] string instructionName) 
-        => await devContainerService.CreateDevContainerAsync(instructionName);
+    public async Task<string> CreateDevContainerAsync([Description("The image alias is an arbitrary name and is not related to any Docker image name.")] string imageAlias,
+        CancellationToken cancellationToken)
+    {
+        var result = await devContainerService.CreateDevContainerAsync(imageAlias, cancellationToken);
+        return result.started
+            ? $"Started container successfully: {result.containerName}"
+            : $"Failed to start container: {result.containerName}.";
+    }
 
     [McpServerTool(Title = "Cleanup development container", Destructive = true, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
-    public async Task<string> CleanupDevContainerAsync(string containerName) 
-        => await devContainerService.CleanupDevContainerAsync(containerName);
+    public async Task<string> CleanupDevContainerAsync(string containerName,
+        CancellationToken cancellationToken) 
+        => await devContainerService.CleanupDevContainerAsync(containerName, cancellationToken);
 
     [McpServerTool(Title = "Run command in development container", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
     public async Task<string> RunCommandInDevContainerAsync(

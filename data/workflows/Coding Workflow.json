@@ -1,0 +1,405 @@
+{
+  "name": "Coding Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -624,
+        -80
+      ],
+      "id": "add74d84-e91d-4436-bbd0-105bf2472030",
+      "name": "When chat message received",
+      "webhookId": "2f81e20b-d653-4725-bb12-7f5174e8c5b8"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:14b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -328,
+        144
+      ],
+      "id": "027a8bcf-ba41-4021-bc28-2d2db51de761",
+      "name": "Ollama Chat Model",
+      "notesInFlow": false,
+      "credentials": {
+        "ollamaApi": {
+          "id": "2tiFg8RM3BmInyaL",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://sphraiva-mcp-server:8080",
+        "serverTransport": "httpStreamable",
+        "include": "selected",
+        "includeTools": [
+          "run_command_in_dev_container"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        144
+      ],
+      "id": "5114cd47-d6e2-4957-b90a-10199dfdb748",
+      "name": "MCP Client"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Repository_Owner', ``, 'string') }}"
+        },
+        "repository": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Repository_Name', ``, 'string') }}"
+        },
+        "issueNumber": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Issue_Number', ``, 'number') }}"
+      },
+      "type": "n8n-nodes-base.githubTool",
+      "typeVersion": 1.1,
+      "position": [
+        888,
+        144
+      ],
+      "id": "e55b0783-58ae-4285-ae40-be4b1dbe7cf0",
+      "name": "Get an issue in GitHub",
+      "webhookId": "61e97081-26fa-4561-a1b3-67cc1c97a889",
+      "credentials": {
+        "githubApi": {
+          "id": "W07W4iAnf9XbjW4w",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://sphraiva-mcp-server:8080",
+        "serverTransport": "httpStreamable",
+        "include": "selected",
+        "includeTools": [
+          "checkout_branch_in_dev_container",
+          "commit_changes_in_dev_container",
+          "run_command_in_dev_container",
+          "push_branch_in_dev_container"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [
+        1176,
+        144
+      ],
+      "id": "defc1fdf-715c-418f-85cd-6bb26682c78f",
+      "name": "DevContainer Command Tool1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://sphraiva-mcp-server:8080/api/dev-containers",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "dockerImageAlias",
+              "value": "={{ $json.output.DockerImageAlias }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -48,
+        -80
+      ],
+      "id": "b987f2a4-4a70-40ec-8f30-e574b11f6521",
+      "name": "Create Dev Container"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://sphraiva-mcp-server:8080/api/dev-containers/{{ $json.containerName }}/repositories",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "repositoryName",
+              "value": "={{ $('User Message Data Extractor').item.json.output.GithubRepositoryName }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        176,
+        -80
+      ],
+      "id": "5b4330f8-a626-4b69-a049-98da1f2f173f",
+      "name": "Clone Repository"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.chatInput }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "RepositoryOwner",
+              "description": "Owner of the repository",
+              "required": true
+            },
+            {
+              "name": "RepositoryName",
+              "description": "Name of the repository",
+              "required": true
+            },
+            {
+              "name": "IssueNumber",
+              "description": "Number of the github issue",
+              "required": true
+            },
+            {
+              "name": "DockerImageAlias",
+              "description": "Alias of the docker image",
+              "required": true
+            },
+            {
+              "name": "UserMessage",
+              "description": "Message from the User",
+              "required": true
+            },
+            {
+              "name": "GithubRepositoryName",
+              "description": "Repository name on github",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        -80
+      ],
+      "id": "0c9c4be0-b787-48bb-b65e-6057c557e303",
+      "name": "User Message Data Extractor"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.result }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "RepositoryFolder",
+              "description": "Repository folder in the development container based on the clone result",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        -80
+      ],
+      "id": "f1f5de63-956a-4c7e-8175-d4a9f7db7eb5",
+      "name": "Repository Folder Extractor"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=RepositoryOwner: {{ $('User Message Data Extractor').item.json.output.RepositoryOwner }}\nRepositoryName: {{ $('User Message Data Extractor').item.json.output.RepositoryName }}\nIssueNumber: {{ $('User Message Data Extractor').item.json.output.IssueNumber }}\nRepositoryFolder: {{ $json.output.RepositoryFolder }}",
+        "options": {
+          "systemMessage": "## Role\nYou are the **Analysis Agent** and the **first tool user** for code inspection and analysis.  \nYour responsibility is to explore the repository using container tools and produce a detailed change plan.\n\n- Use container tools to inspect all relevant files, including hidden ones.\n- Do not modify files; your job is read-only analysis.\n- The Implementation Agent will rely on your change plan to make modifications.\n\n---\n\n## Environment\n- The development container is already running and contains the fully cloned repository at `/workspace/<repo>`.\n- **Do not create, modify, or simulate the container.** All operations must use the existing container.\n- You can execute Bash commands to inspect and analyze files (read-only).\n- Hidden files and folders must be included in searches, except `.git`.\n\n---\n\n## Objective\n- Analyze the user requirement and the current repository state.\n- Produce a **single, complete, actionable Detailed Change Plan**.\n- The plan must be sufficient for the Implementation Agent to perform **all changes** without asking further questions.\n- Include **exact file paths**, **exact code locations**, and **precise modifications** (before/after if applicable).\n\n---\n\n## Workflow\n1. Understand the requirement.\n2. Inspect all relevant repository files using tools.\n3. Consolidate your findings into **one final, actionable message**.\n4. For every required change, include:\n   - **File path**\n   - **Current code snippet** (or description if snippet is long)\n   - **Modification required** (with before/after code where possible)\n   - **New files** if any\n   - **Special notes**\n5. End the message with **exactly one** of:\n   - `\"Change plan complete.\"` — plan is fully ready for implementation\n   - `\"Change plan not ready. Continuing analysis.\"` — with a concise explanation of what is missing.\n\n---\n\n## Constraints\n- Do not perform any file modifications or write operations.\n- Always produce **a single, final response**; never multiple messages.\n- Include hidden files and folders in analysis, except `.git`.\n- Do not assume anything outside the repository or user-provided requirement.\n\n---\n\n## Tool Usage\n- Use read-only Bash commands to gather information: `cat`, `grep`, `find`, `ls -la`.\n- Ensure all files, including dotfiles, are inspected.\n\n---\n\n## Output Format\n- One complete Detailed Change Plan in Markdown, including:\n  1. **Files to Modify** — exact paths\n  2. **Specific Changes** — before/after or precise instructions\n  3. **New Files** — with initial content\n  4. **Special Notes** — verification steps, warnings\n- End with `\"Change plan complete.\"` or `\"Change plan not ready. Continuing analysis.\"` with justification.\n    "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        752,
+        -80
+      ],
+      "id": "de66d0d4-a086-4118-ab71-919b6231b391",
+      "name": "Analysis Agent",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=RepositoryOwner: {{ $('User Message Data Extractor').item.json.output.RepositoryOwner }}\nRepositoryName: {{ $('User Message Data Extractor').item.json.output.RepositoryName }}\nIssueNumber: {{ $('User Message Data Extractor').item.json.output.IssueNumber }}\nRepositoryFolder: {{ $('Repository Folder Extractor').item.json.output.RepositoryFolder }}\n\n## Detailed Change Plan:\n{{ $json.output }}",
+        "options": {
+          "systemMessage": "## Role\nYou are the **Implementation Agent** and the **primary tool user** in the workflow.  \nYour responsibility is to execute all planned changes from the Detailed Change Plan directly inside the existing development container using available tools.\n\n- All file edits, Git operations, builds, and tests must be performed **directly via the container tools**.\n- Other agents rely on your results to proceed.\n\n---\n\n## Environment\n- The development container is already running and contains the fully cloned repository at `/workspace/<repo>`.\n- **Do not create, modify, or simulate the container.** All operations must use the existing container.\n- Full access to `/workspace/<repo>` for modifications, branching, commits, builds, and tests.\n- Hidden files and folders must be included in searches and updates, except `.git`.\n\n---\n\n## Objective\n- Take the Detailed Change Plan from the Analysis Agent.\n- Create a new feature branch.\n- Apply each change **exactly as described** in the plan.\n- Commit small, focused changes **using container tools**.\n- Build the solution and run tests **using container tools** after each commit.\n- Fix issues immediately if tests fail, **within the container**.\n- Push the completed branch to the remote repository.\n- Provide a **single, consolidated final report** with all results.\n\n---\n\n## Workflow\n1. Create a new branch following the pattern: `feature/<short-description>`.\n2. Apply all changes **using the container tools** according to the Detailed Change Plan.\n3. Build and test after each internal commit, **using container tools**.\n4. Fix any test failures within the scope of the plan, **inside the container**.\n5. Push the branch when all changes are applied and verified.\n6. Consolidate all results into **one final message**.\n\n---\n\n## Constraints\n- Work only inside `/workspace/<repo>`.\n- Never modify `.git` or third-party/generated files.\n- Always execute modifications, commits, builds, and tests in the **dev container**.\n- Do not produce step-by-step output.\n- Output **only one final consolidated message** at the end.\n\n---\n\n## Tool Usage\n- **All file modifications, commits, builds, and tests must be performed via container tools**.\n- Hidden files and folders must be included in all operations, except `.git`.\n- Do not output raw shell command transcripts in the final message.\n- Example: for file edits, write directly via the container tool; for commits, use container git; for builds and tests, run container build/test commands.\n\n---\n\n## Output Format\nThe final message must include:\n1. **Branch creation**\n   - Branch name\n2. **Commits**\n   - Commit messages (one per logical change)\n3. **Build and test results**\n   - Success or failure with brief details\n4. **Completion**\n   - End exactly with: `\"Implementation complete.\"`\n    "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        -80
+      ],
+      "id": "0f86abd2-7bf8-4c9f-869c-533bfb69962d",
+      "name": "Implementation Agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "User Message Data Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "User Message Data Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Analysis Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Implementation Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Repository Folder Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "Analysis Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get an issue in GitHub": {
+      "ai_tool": [
+        [
+          {
+            "node": "Analysis Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DevContainer Command Tool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Implementation Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Dev Container": {
+      "main": [
+        [
+          {
+            "node": "Clone Repository",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clone Repository": {
+      "main": [
+        [
+          {
+            "node": "Repository Folder Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Message Data Extractor": {
+      "main": [
+        [
+          {
+            "node": "Create Dev Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Repository Folder Extractor": {
+      "main": [
+        [
+          {
+            "node": "Analysis Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analysis Agent": {
+      "main": [
+        [
+          {
+            "node": "Implementation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "757ca5da-efac-4751-96f5-ddcd7cf7524e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a883d84f05e2238b7e3dc20712e32c7b3fc34d59096d24f8e2963b3bb11c2365"
+  },
+  "id": "AeZeTJqKjWQuhQsG",
+  "tags": []
+}

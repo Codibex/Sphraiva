@@ -1,5 +1,6 @@
 using MCP.Server.Settings;
 using MCP.Server.Services;
+using MCP.Server.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,5 +41,9 @@ if (app.Environment.IsDevelopment())
 
 app.MapHealthChecks("/health");
 app.MapMcp();
+
+var endpointGroupBuilder = app.MapGroup("/api");
+endpointGroupBuilder.MapDevContainerEndpoints();
+endpointGroupBuilder.MapGitDevContainerEndpoints();
 
 app.Run();

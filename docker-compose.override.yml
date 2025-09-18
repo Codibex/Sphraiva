@@ -13,6 +13,18 @@ services:
       - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
       - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
 
+  sphraiva-open-webui:
+    ports:
+      - "20002:8080"
+    volumes:
+      - D:\Dev\data\sphraiva\open_webui_data:/app/backend/data
+
+  sphraiva-n8n:
+    ports:
+      - "20004:5678"
+    volumes:
+      - D:\Dev\data\sphraiva\n8n_data:/home/node/.n8n
+
   sphraiva-mcp-host:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
@@ -54,9 +66,32 @@ services:
       - ./testdata:/data
 
   sphraiva-ollama-model:
+    environment:
+      - OLLAMA_MODEL=${LLM_MODEL}
+      - OLLAMA_API_PORT=11434
+      - OLLAMA_CONTEXT_LENGTH=20480
     ports:
       - "20005:11434"
+    volumes:
+      - D:\Dev\data\sphraiva\ollama_data:/root/.ollama
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0' # Limit to 4 CPU cores
+          memory: 16G # Limit to 16GB of RAM
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   sphraiva-qdrant:
     ports:
       - "20006:6333"
+    volumes:
+      - D:\Dev\data\sphraiva\qrdant_data:/qrdant/data
+
+  sphraiva-postgres:
+    volumes:
+      - D:\Dev\data\sphraiva\postgres_data:/var/lib/postgresql/data
+      - ./data/init-data.sh:/docker-entrypoint-initdb.d/init-data.sh

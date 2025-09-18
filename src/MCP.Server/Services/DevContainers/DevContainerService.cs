@@ -14,7 +14,8 @@ public class DevContainerService(
 {
     private readonly DevContainerSettings _settings = options.Value;
 
-    public async Task<string> CreateDevContainerAsync(string instructionName)
+    public async Task<(bool started, string containerName)> CreateDevContainerAsync(string instructionName,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(instructionName))
         {
@@ -32,18 +33,17 @@ public class DevContainerService(
         var imageExists = images.Any(img => img.RepoTags != null && img.RepoTags.Contains(dockerImage.ImageName + ":latest"));
         if (!imageExists)
         {
-            await devContainerBuilder.BuildAsync(dockerImage);
+            await devContainerBuilder.BuildAsync(dockerImage, cancellationToken);
         }
 
-        var result = await devContainerCreator.CreateAsync(dockerImage);
+        var result = await devContainerCreator.CreateAsync(dockerImage, cancellationToken);
 
         var started = await dockerClient.Containers.StartContainerAsync(result.Id, null);
-        return started
-            ? $"Started container successfully: {result.ContainerName}"
-            : $"Failed to start container: {result.ContainerName}.";
+        return (started, result.ContainerName);
     }
 
-    public async Task<string> CleanupDevContainerAsync(string containerName)
+    public async Task<string> CleanupDevContainerAsync(string containerName,
+        CancellationToken cancellationToken)
     {
         var container = await FindContainer(containerName);
         if (container == null)

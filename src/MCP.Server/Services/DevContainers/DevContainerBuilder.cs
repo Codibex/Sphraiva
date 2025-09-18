@@ -10,7 +10,7 @@ public class DevContainerBuilder(
 {
     private const string DOCKER_FILE_NAME = "DockerFile";
 
-    public async Task BuildAsync(DockerImage dockerImage)
+    public async Task BuildAsync(DockerImage dockerImage, CancellationToken cancellationToken)
     {
         var tarFilePath = dockerTarService.CreateDockerTar(dockerImage);
 
@@ -26,7 +26,8 @@ public class DevContainerBuilder(
             fs,
             null,
             null,
-            new Progress<JSONMessage>()
+            new Progress<JSONMessage>(),
+            cancellationToken
         );
     }
 }

@@ -16,9 +16,9 @@ public class DevContainerCreator(
     private const string GITHUB_DIRECTORY = "github";
     private const string CONTAINER_BASE_NAME = "agent-dev-";
 
-    public async Task<DevContainerCreationResult> CreateAsync(DockerImage dockerImage)
+    public async Task<DevContainerCreationResult> CreateAsync(DockerImage dockerImage, CancellationToken cancellationToken)
     {
-        var githubPatToken = await GetGithubPatTokenAsync();
+        var githubPatToken = await GetGithubPatTokenAsync(cancellationToken);
 
         var envVars = new List<string>
         {
@@ -46,10 +46,10 @@ public class DevContainerCreator(
         return new DevContainerCreationResult(response.ID, containerName);
     }
 
-    private Task<string> GetGithubPatTokenAsync()
+    private Task<string> GetGithubPatTokenAsync(CancellationToken cancellationToken)
     {
         var file = Path.Combine(_settings.DataDirectory, GITHUB_DIRECTORY, _settings.GithubPatTokenFile);
-        return File.ReadAllTextAsync(file);
+        return File.ReadAllTextAsync(file, cancellationToken);
     }
 
     private static string CreateContainerName()

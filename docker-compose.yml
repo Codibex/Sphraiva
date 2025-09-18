@@ -5,6 +5,31 @@ services:
       context: .
       dockerfile: src/MCP.WebApp/MCP.WebApp/Dockerfile
 
+  sphraiva-open-webui:
+    image: ghcr.io/open-webui/open-webui:latest
+    container_name: sphraiva-open-webui
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_SERVER}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  
+  sphraiva-n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: sphraiva-n8n
+    environment:
+      - OLLAMA_HOST=${OLLAMA_SERVER}
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=sphraiva-postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_NON_ROOT_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_NON_ROOT_PASSWORD}
+    depends_on:
+      sphraiva-postgres:
+        condition: service_healthy
+
   sphraiva-mcp-host:
     image: ${DOCKER_REGISTRY-}sphraiva-mcp-host
     container_name: sphraiva-mcp-host
@@ -13,8 +38,8 @@ services:
       dockerfile: src/MCP.Host/Dockerfile
     environment:
       - MCP_SERVER=http://sphraiva-mcp-server:8080
-      - OLLAMA_SERVER=http://sphraiva-ollama:11434
-      - LLM_MODEL=mistral-nemo
+      - OLLAMA_SERVER
+      - LLM_MODEL
       - QDRANT_HOST=sphraiva-qdrant
       - QDRANT_PORT=6334
 
@@ -32,8 +57,8 @@ services:
       context: .
       dockerfile: src/MCP.BackgroundWorker.FileSystem/Dockerfile
     environment:
-      - OLLAMA_SERVER=http://sphraiva-ollama:11434
-      - LLM_MODEL=mistral-nemo
+      - OLLAMA_SERVER
+      - LLM_MODEL
       - QDRANT_HOST=sphraiva-qdrant
       - QDRANT_PORT=6334
 
@@ -43,30 +68,24 @@ services:
     build:
       context: .
       dockerfile: src/Ollama/Dockerfile
-    volumes:
-      - ollama-models:/root/.ollama
-    environment:
-      - OLLAMA_MODEL=mistral-nemo
-      - OLLAMA_API_PORT=11434
-      - OLLAMA_CONTEXT_LENGTH=20480
-    deploy:
-      resources:
-        limits:
-          cpus: '4.0' # Limit to 4 CPU cores
-          memory: 16G # Limit to 16GB of RAM
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
 
   sphraiva-qdrant:
     image: qdrant/qdrant
     container_name: sphraiva-qdrant
-    volumes:
-      - qrdant-data:/qrdant/data
-      
-volumes:
-  ollama-models:
-  qrdant-data:
+
+  sphraiva-postgres:
+    image: postgres:latest
+    container_name: sphraiva-postgres
+    restart: always
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_NON_ROOT_USER
+      - POSTGRES_NON_ROOT_PASSWORD
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
 

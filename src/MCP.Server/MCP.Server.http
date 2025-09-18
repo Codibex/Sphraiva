@@ -1,6 +1,6 @@
-@MCP.Server_HostAddress = http://localhost:5244
+@MCP.Server_HostAddress = http://localhost:20015
 
-GET {{MCP.Server_HostAddress}}/weatherforecast/
+Get {{MCP.Server_HostAddress}}/mcp/tools/list
 Accept: application/json
 
 ###

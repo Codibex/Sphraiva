@@ -4,5 +4,5 @@ namespace MCP.Server.Services.DevContainers;
 
 public interface IDevContainerBuilder
 {
-    Task BuildAsync(DockerImage dockerImage);
+    Task BuildAsync(DockerImage dockerImage, CancellationToken cancellationToken);
 }
