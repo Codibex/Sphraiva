@@ -12,8 +12,8 @@ namespace MCP.Server.Tools;
 )]
 public class DevContainerTool(IDevContainerService devContainerService)
 {
-    [McpServerTool(Title = "Create development container", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
-    public async Task<string> CreateDevContainerAsync([Description("The image alias is an arbitrary name and is not related to any Docker image name.")] string imageAlias,
+    [McpServerTool(Title = "Create a docker development container", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
+    public async Task<string> CreateDevContainerAsync([Description("Specifies a custom alias for the development container. This alias is user-defined and does not correspond to any Docker image name.")] string imageAlias,
         CancellationToken cancellationToken)
     {
         var result = await devContainerService.CreateDevContainerAsync(imageAlias, cancellationToken);
@@ -22,15 +22,15 @@ public class DevContainerTool(IDevContainerService devContainerService)
             : $"Failed to start container: {result.containerName}.";
     }
 
-    [McpServerTool(Title = "Cleanup development container", Destructive = true, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
-    public async Task<string> CleanupDevContainerAsync(string containerName,
+    [McpServerTool(Title = "Cleanup a docker development container", Destructive = true, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
+    public async Task<string> CleanupDevContainerAsync([Description("Specifies the name of the Docker development container to be removed.")] string containerName,
         CancellationToken cancellationToken) 
         => await devContainerService.CleanupDevContainerAsync(containerName, cancellationToken);
 
     [McpServerTool(Title = "Run command in development container", Destructive = false, Idempotent = false, ReadOnly = false, UseStructuredContent = true)]
     public async Task<string> RunCommandInDevContainerAsync(
-        string containerName,
-        string command, 
+        [Description("Specifies the name of the Docker development container.")] string containerName,
+        [Description("Specifies the command to execute inside the Docker development container.")] string command, 
         CancellationToken cancellationToken) 
         => await devContainerService.RunCommandInContainerAsync(containerName, command, cancellationToken);
 }

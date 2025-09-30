@@ -20,6 +20,7 @@ services:
       - OLLAMA_HOST=${OLLAMA_SERVER}
       - N8N_RUNNERS_ENABLED=true
       - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
+      - GENERIC_TIMEZONE=Europe/Vienna
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=sphraiva-postgres
       - DB_POSTGRESDB_PORT=5432
