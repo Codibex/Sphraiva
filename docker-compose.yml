@@ -75,7 +75,7 @@ services:
     container_name: sphraiva-qdrant
 
   sphraiva-postgres:
-    image: postgres:latest
+    image: postgres:17
     container_name: sphraiva-postgres
     restart: always
     environment:
