@@ -1,0 +1,33 @@
+POST http://localhost:20004/webhook-test/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="How_to_Fold_a_Paper_Boat.pdf"
+Content-Type: application/pdf
+
+< ./testdata/How_to_Fold_a_Paper_Boat.pdf
+--boundary--
+
+###
+
+POST http://localhost:20004/webhook-test/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="pancake_recipe.md"
+Content-Type: application/pdf
+
+< ./testdata/pancake_recipe.md
+--boundary--
+
+###
+
+POST http://localhost:20004/webhook-test/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="Paper_Boat_Regatta_Accident_Report.docx"
+Content-Type: application/pdf
+
+< ./testdata/Paper_Boat_Regatta_Accident_Report.docx
+--boundary--

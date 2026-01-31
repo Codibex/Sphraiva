@@ -78,7 +78,7 @@ services:
       resources:
         limits:
           cpus: '4.0' # Limit to 4 CPU cores
-          memory: 16G # Limit to 16GB of RAM
+          memory: 32G # Limit to 32GB of RAM
         reservations:
           devices:
             - driver: nvidia
